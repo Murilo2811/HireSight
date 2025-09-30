@@ -1,4 +1,3 @@
-
 {
   "appTitle": "HireSight",
   "jobDescription.title": "Job Description",
@@ -13,6 +12,7 @@
   "resume.textPlaceholder": "Paste your full resume or professional profile here...",
   "buttons.analyzing": "Analyzing...",
   "buttons.analyze": "Analyze",
+  "buttons.clear": "Clear",
   "analysis.title": "Analysis Report",
   "analysis.loading": "The AI is analyzing the documents, please wait...",
   "error.title": "Error",
@@ -28,6 +28,8 @@
   "analysis.interviewQuestions": "Suggested Interview Questions",
   "analysis.companyCulture": "Company Culture",
   "analysis.salaryAndBenefits": "Salary & Benefits",
+  "highlight.enable": "Enable Highlights",
+  "highlight.disable": "Disable Highlights",
   "error.jobDescriptionMissing": "Job description is missing.",
   "error.resumeMissing": "Resume is missing.",
   "error.unknown": "An unknown error occurred.",
@@ -40,5 +42,15 @@
   "consistency.consistencyScore": "Consistency Score",
   "consistency.missingFromInterview": "From Resume, Missing in Interview",
   "consistency.newInInterview": "New Relevant Information from Interview",
-  "consistency.none": "None identified."
+  "consistency.none": "None identified.",
+  "consistency.summary": "Narrative Summary",
+  "consistency.recommendation": "Final Recommendation",
+  "consistency.softSkillsAnalysis": "Soft Skills Analysis",
+  "consistency.inconsistencies": "Inconsistencies & Contradictions",
+  "consistency.prosForHiring": "Pros for Hiring",
+  "consistency.consForHiring": "Cons for Hiring",
+  "consistency.updatedOverallFit": "Updated Overall Fit",
+  "consistency.hiringDecision": "Final Hiring Decision",
+  "consistency.recommended": "Recommended for Hire",
+  "consistency.notRecommended": "Not Recommended"
 }

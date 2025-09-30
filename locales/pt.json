@@ -1,4 +1,3 @@
-
 {
   "appTitle": "HireSight",
   "jobDescription.title": "Descrição da Vaga",
@@ -13,6 +12,7 @@
   "resume.textPlaceholder": "Cole seu currículo completo ou perfil profissional aqui...",
   "buttons.analyzing": "Analisando...",
   "buttons.analyze": "Analisar",
+  "buttons.clear": "Limpar",
   "analysis.title": "Relatório da Análise",
   "analysis.loading": "A IA está analisando os documentos, por favor aguarde...",
   "error.title": "Erro",
@@ -28,6 +28,8 @@
   "analysis.interviewQuestions": "Sugestões de Perguntas para Entrevista",
   "analysis.companyCulture": "Cultura da Empresa",
   "analysis.salaryAndBenefits": "Salário e Benefícios",
+  "highlight.enable": "Ativar Destaques",
+  "highlight.disable": "Desativar Destaques",
   "error.jobDescriptionMissing": "A descrição da vaga é obrigatória.",
   "error.resumeMissing": "O currículo é obrigatório.",
   "error.unknown": "Ocorreu um erro desconhecido.",
@@ -40,5 +42,15 @@
   "consistency.consistencyScore": "Pontuação de Consistência",
   "consistency.missingFromInterview": "Do Currículo, Ausente na Entrevista",
   "consistency.newInInterview": "Novas Informações Relevantes da Entrevista",
-  "consistency.none": "Nenhum item identificado."
+  "consistency.none": "Nenhum item identificado.",
+  "consistency.summary": "Resumo Narrativo",
+  "consistency.recommendation": "Recomendação Final",
+  "consistency.softSkillsAnalysis": "Análise de Soft Skills",
+  "consistency.inconsistencies": "Inconsistências e Contradições",
+  "consistency.prosForHiring": "Prós para Contratação",
+  "consistency.consForHiring": "Contras para Contratação",
+  "consistency.updatedOverallFit": "Compatibilidade Geral Atualizada",
+  "consistency.hiringDecision": "Decisão Final de Contratação",
+  "consistency.recommended": "Recomendado para Contratação",
+  "consistency.notRecommended": "Não Recomendado"
 }
