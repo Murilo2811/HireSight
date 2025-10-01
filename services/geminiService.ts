@@ -1,260 +1,415 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import { RecruiterAnalysisResult, ConsistencyAnalysisResult } from "../types";
+import type { 
+    RecruiterAnalysisResult, 
+    PreliminaryDecisionResult, 
+    ConsistencyAnalysisResult,
+    RewrittenResumeResult
+} from '../types';
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY! });
+// Per coding guidelines, the API key must be obtained exclusively from `process.env.API_KEY`.
+const apiKey = process.env.API_KEY;
+if (!apiKey) {
+    throw new Error("API_KEY environment variable is not set. Please ensure it is configured.");
+}
+// Fix: Initialize GoogleGenAI client with a named apiKey parameter.
+const ai = new GoogleGenAI({ apiKey });
+
+// Fix: Use the recommended model 'gemini-2.5-flash' for general text tasks.
+const MODEL_NAME = 'gemini-2.5-flash';
+
+type Input = { content: string | { data: string; mimeType: string }, format: 'text' | 'file' };
+
+/**
+ * Helper function to convert app-specific input format to Gemini API Part format.
+ */
+const buildContentPart = (input: Input) => {
+    if (input.format === 'text' && typeof input.content === 'string') {
+        return { text: input.content };
+    }
+    if (input.format === 'file' && typeof input.content === 'object' && input.content !== null) {
+        return {
+            inlineData: {
+                data: input.content.data,
+                mimeType: input.content.mimeType,
+            },
+        };
+    }
+    throw new Error('Invalid input format provided to buildContentPart.');
+};
+
+// --- JSON Schemas for Gemini API ---
+
+const matchedItemSchema = {
+    type: Type.OBJECT,
+    properties: {
+        item: { type: Type.STRING },
+        status: { type: Type.STRING, description: "Can be 'Match', 'Partial', or 'No Match'" },
+        explanation: { type: Type.STRING },
+    },
+    required: ['item', 'status', 'explanation'],
+};
+
+const sectionMatchSchema = {
+    type: Type.OBJECT,
+    properties: {
+        items: {
+            type: Type.ARRAY,
+            items: matchedItemSchema,
+        },
+        score: { type: Type.NUMBER, description: "Score from 0 to 100." },
+    },
+    required: ['items', 'score'],
+};
+
+const analysisWithScoreSchema = {
+    type: Type.OBJECT,
+    properties: {
+        analysis: { type: Type.STRING },
+        score: { type: Type.NUMBER, description: "Score from 0 to 100." },
+    },
+    required: ['analysis', 'score'],
+};
 
 const recruiterAnalysisSchema = {
     type: Type.OBJECT,
     properties: {
-        jobTitle: { type: Type.STRING, description: "The title of the job position." },
-        summary: { type: Type.STRING, description: "A concise summary of the job, the candidate's profile, and the overall match." },
-        keyResponsibilitiesMatch: {
-            type: Type.OBJECT,
-            properties: {
-                items: { type: Type.ARRAY, items: { type: Type.STRING }, description: "A bulleted list of the key responsibilities for the role mentioned in the job description." },
-                score: { type: Type.NUMBER, description: "A numerical score (0-100) on how well the candidate's experience matches the key responsibilities."}
-            },
-            required: ['items', 'score']
-        },
-        requiredSkillsMatch: {
-            type: Type.OBJECT,
-            properties: {
-                items: { type: Type.ARRAY, items: { type: Type.STRING }, description: "A list of required skills and qualifications, indicating whether the candidate possesses them based on their resume." },
-                score: { type: Type.NUMBER, description: "A numerical score (0-100) representing the candidate's alignment with the required skills." }
-            },
-            required: ['items', 'score']
-        },
-        niceToHaveSkillsMatch: {
-            type: Type.OBJECT,
-            properties: {
-                items: { type: Type.ARRAY, items: { type: Type.STRING }, description: "A list of 'nice-to-have' or preferred skills, indicating if the candidate has them." },
-                score: { type: Type.NUMBER, description: "A numerical score (0-100) for the candidate's possession of nice-to-have skills." }
-            },
-            required: ['items', 'score']
-        },
-        companyCultureFit: {
-            type: Type.OBJECT,
-            properties: {
-                analysis: { type: Type.STRING, description: "An analysis of the company culture if mentioned, and how the candidate might fit in." },
-                score: { type: Type.NUMBER, description: "A numerical score (0-100) assessing the candidate's potential fit with the company culture." }
-            },
-            required: ['analysis', 'score']
-        },
-        salaryAndBenefits: { type: Type.STRING, description: "Any information about salary, compensation, and benefits mentioned in the job description." },
-        redFlags: {
-            type: Type.ARRAY,
-            items: { type: Type.STRING },
-            description: "A list of potential red flags or concerns from either the job description (e.g., vague language) or the candidate's resume (e.g., gaps in employment)."
-        },
-        interviewQuestions: {
-            type: Type.ARRAY,
-            items: { type: Type.STRING },
-            description: "A list of suggested interview questions to ask the candidate to further assess their fit for the role, based on their resume and the job requirements."
-        },
-        overallFitScore: { type: Type.NUMBER, description: "A numerical score from 0 to 100 representing the candidate's overall fit for the job." },
-        fitExplanation: { type: Type.STRING, description: "A detailed explanation justifying the overall fit score, highlighting strengths and weaknesses." },
-        compatibilityGaps: {
-            type: Type.ARRAY,
-            items: { type: Type.STRING },
-            description: "A bulleted list of key requirements from the job description that are missing or not adequately covered in the candidate's resume."
-        },
+        jobTitle: { type: Type.STRING },
+        summary: { type: Type.STRING },
+        keyResponsibilitiesMatch: sectionMatchSchema,
+        requiredSkillsMatch: sectionMatchSchema,
+        niceToHaveSkillsMatch: sectionMatchSchema,
+        companyCultureFit: analysisWithScoreSchema,
+        salaryAndBenefits: { type: Type.STRING },
+        redFlags: { type: Type.ARRAY, items: { type: Type.STRING } },
+        interviewQuestions: { type: Type.ARRAY, items: { type: Type.STRING } },
+        overallFitScore: { type: Type.NUMBER, description: "Overall score from 0 to 100." },
+        fitExplanation: { type: Type.STRING },
+        compatibilityGaps: { type: Type.ARRAY, items: { type: Type.STRING } },
     },
     required: [
-        'jobTitle', 'summary', 'keyResponsibilitiesMatch', 'requiredSkillsMatch', 
-        'niceToHaveSkillsMatch', 'companyCultureFit', 'salaryAndBenefits', 
+        'jobTitle', 'summary', 'keyResponsibilitiesMatch', 'requiredSkillsMatch',
+        'niceToHaveSkillsMatch', 'companyCultureFit', 'salaryAndBenefits',
         'redFlags', 'interviewQuestions', 'overallFitScore', 'fitExplanation', 'compatibilityGaps'
     ]
 };
 
-const consistencySchema = {
+const preliminaryDecisionSchema = {
     type: Type.OBJECT,
     properties: {
-        consistencyScore: { type: Type.NUMBER, description: "A percentage score (0-100) representing how consistent the interview was with the resume and job description." },
-        summary: { type: Type.STRING, description: "A narrative summary (1-2 paragraphs) explaining the reasoning for the overall evaluation, citing specific examples from the provided documents." },
-        recommendation: { 
-            type: Type.STRING, 
-            enum: ['Strong Fit', 'Partial Fit', 'Weak Fit'],
-            description: "The final recommendation for the candidate based on the holistic analysis."
-        },
-        softSkillsAnalysis: { 
-            type: Type.OBJECT,
-            properties: {
-                items: { type: Type.STRING, description: "An evaluation of the candidate's communication style, motivation, leadership, teamwork, and problem-solving skills based on the interview transcript compared to job description expectations." },
-                score: { type: Type.NUMBER, description: "A numerical score (0-100) assessing the quality of the candidate's soft skills demonstrated in the interview."}
-            },
-            required: ['items', 'score']
-        },
-        inconsistencies: {
-            type: Type.OBJECT,
-            properties: {
-                items: { type: Type.ARRAY, items: { type: Type.STRING }, description: "A bulleted list of any inconsistencies or contradictions found when cross-validating claims in the resume with what was said in the interview." },
-                score: { type: Type.NUMBER, description: "A numerical score (0-100) where 100 means no inconsistencies and 0 means critical inconsistencies were found."}
-            },
-            required: ['items', 'score']
-        },
-        missingFromInterview: {
-            type: Type.OBJECT,
-            properties: {
-                items: { type: Type.ARRAY, items: { type: Type.STRING }, description: "A bulleted list of key skills or experiences from the resume that were NOT mentioned or elaborated on during the interview." },
-                score: { type: Type.NUMBER, description: "A numerical score (0-100) assessing the importance of the items missing from the interview. 100 means nothing important was missing."}
-            },
-            required: ['items', 'score']
-        },
-        newInInterview: {
-            type: Type.OBJECT,
-            properties: {
-                items: { type: Type.ARRAY, items: { type: Type.STRING }, description: "A bulleted list of new, relevant information or skills the candidate presented in the interview that were NOT on their resume but are relevant to the job." },
-                score: { type: Type.NUMBER, description: "A numerical score (0-100) assessing the positive impact of the new information revealed."}
-            },
-            required: ['items', 'score']
-        },
-        prosForHiring: {
-            type: Type.ARRAY,
-            items: { type: Type.STRING },
-            description: "A bulleted list of the main reasons TO HIRE the candidate, based on the complete analysis."
-        },
-        consForHiring: {
-            type: Type.ARRAY,
-            items: { type: Type.STRING },
-            description: "A bulleted list of the main CONCERNS or reasons NOT TO HIRE the candidate, based on the complete analysis."
-        },
-        updatedOverallFitScore: { type: Type.NUMBER, description: "A new, updated numerical score from 0 to 100 representing the candidate's overall fit, recalculated after considering the interview transcript." },
-        hiringDecision: { 
-            type: Type.STRING, 
-            enum: ['Recommended for Hire', 'Not Recommended'],
-            description: "A final, clear verdict on whether the candidate is suitable for the role and should be hired."
-        },
+        decision: { type: Type.STRING, description: "Should be 'Recommended for Interview' or 'Not Recommended'" },
+        pros: { type: Type.ARRAY, items: { type: Type.STRING } },
+        cons: { type: Type.ARRAY, items: { type: Type.STRING } },
+        explanation: { type: Type.STRING },
     },
-    required: ['consistencyScore', 'summary', 'recommendation', 'softSkillsAnalysis', 'inconsistencies', 'missingFromInterview', 'newInInterview', 'prosForHiring', 'consForHiring', 'updatedOverallFitScore', 'hiringDecision']
+    required: ['decision', 'pros', 'cons', 'explanation'],
 };
 
-const buildParts = (content: string | { data: string; mimeType: string }, format: 'text' | 'file') => {
-    if (format === 'text') {
-        return [{ text: content as string }];
-    } else {
-        const fileContent = content as { data: string; mimeType: string };
-        return [{
-            inlineData: {
-                data: fileContent.data,
-                mimeType: fileContent.mimeType,
-            },
-        }];
-    }
+const rewrittenResumeSchema = {
+    type: Type.OBJECT,
+    properties: {
+        rewrittenResume: { type: Type.STRING, description: "The full rewritten resume text, optimized for the job." },
+    },
+    required: ['rewrittenResume'],
 };
 
-const handleGeminiError = (error: unknown, context: string): Error => {
-    console.error(`Error during ${context}:`, error);
-    if (error instanceof SyntaxError) {
-         return new Error("Failed to parse the model's response. The format was invalid.");
-    }
-    return new Error(`An unexpected error occurred during the ${context}. Please try again.`);
+const gapResolutionItemSchema = {
+    type: Type.OBJECT,
+    properties: {
+        gap: { type: Type.STRING },
+        resolution: { type: Type.STRING },
+    },
+    required: ['gap', 'resolution'],
 };
 
+const consistencySectionStringSchema = {
+    type: Type.OBJECT,
+    properties: {
+        items: { type: Type.STRING },
+        score: { type: Type.NUMBER, description: "Score from 0 to 100." },
+    },
+    required: ['items', 'score'],
+};
 
+const consistencySectionStringArraySchema = {
+    type: Type.OBJECT,
+    properties: {
+        items: { type: Type.ARRAY, items: { type: Type.STRING } },
+        score: { type: Type.NUMBER, description: "Score from 0 to 100." },
+    },
+    required: ['items', 'score'],
+};
+
+const consistencySectionGapResolutionSchema = {
+    type: Type.OBJECT,
+    properties: {
+        items: { type: Type.ARRAY, items: gapResolutionItemSchema },
+        score: { type: Type.NUMBER, description: "Score from 0 to 100." },
+    },
+    required: ['items', 'score'],
+};
+
+const consistencyAnalysisSchema = {
+    type: Type.OBJECT,
+    properties: {
+        consistencyScore: { type: Type.NUMBER, description: "Score from 0 to 100." },
+        summary: { type: Type.STRING },
+        recommendation: { type: Type.STRING, description: "Should be 'Strong Fit', 'Partial Fit', or 'Weak Fit'" },
+        softSkillsAnalysis: consistencySectionStringSchema,
+        inconsistencies: consistencySectionStringArraySchema,
+        missingFromInterview: consistencySectionStringArraySchema,
+        newInInterview: consistencySectionStringArraySchema,
+        gapResolutions: consistencySectionGapResolutionSchema,
+        prosForHiring: { type: Type.ARRAY, items: { type: Type.STRING } },
+        consForHiring: { type: Type.ARRAY, items: { type: Type.STRING } },
+        updatedOverallFitScore: { type: Type.NUMBER, description: "Score from 0 to 100." },
+        hiringDecision: { type: Type.STRING, description: "Should be 'Recommended for Hire' or 'Not Recommended'" },
+    },
+    required: [
+        'consistencyScore', 'summary', 'recommendation', 'softSkillsAnalysis',
+        'inconsistencies', 'missingFromInterview', 'newInInterview',
+        'gapResolutions', 'prosForHiring', 'consForHiring',
+        'updatedOverallFitScore', 'hiringDecision'
+    ],
+};
+
+// --- API Service Functions ---
+
+/**
+ * Analyzes a resume against a job description for a recruiter.
+ */
 export const analyzeForRecruiter = async (
-    jobDescription: { content: string | { data: string; mimeType: string }, format: 'text' | 'file' },
-    resume: { content: string | { data: string; mimeType: string }, format: 'text' | 'file' },
+    jobInput: Input,
+    resumeInput: Input,
     language: 'en' | 'pt'
 ): Promise<RecruiterAnalysisResult> => {
-    const parts: any[] = [];
-    const langInstruction = language === 'pt' ? 'Toda a análise deve ser em Português do Brasil.' : 'The entire analysis must be in English.';
-    
-    const systemInstruction = `
-Act like a senior HR analyst with over 20 years of experience in talent acquisition, competency mapping, and organizational fit assessment. You have deep expertise in recruitment processes, resume evaluation, and job description analysis.
 
-Your task is to conduct a deep and comprehensive analysis of a candidate’s resume (CV) against a provided job description (JD).
+    const currentDate = new Date().toISOString().split('T')[0]; // Get YYYY-MM-DD
 
-Your objective is to:
-1. Provide a detailed report for a recruiter, highlighting the candidate's strengths, weaknesses, and overall fit for the role.
-2. Assess both technical competencies and behavioral/soft skills alignment based on the provided documents.
-3. For each key section of the analysis (Responsibilities, Required Skills, Nice-to-Have Skills, Company Culture), assign a numerical score from 0 to 100 representing the candidate's alignment.
-4. Identify key alignments, potential gaps, or red flags in the candidate's profile.
-5. Generate actionable insights, such as targeted interview questions, to help the recruiter make an informed decision.
+    const prompt = `
+        As a senior talent acquisition specialist, your task is to conduct a thorough analysis of a candidate's resume against a job description. 
+        Provide a detailed, unbiased report in JSON format. The response must adhere strictly to the provided JSON schema.
+        
+        **Crucial Rule: The current date for this analysis is ${currentDate}. Use this date as the 'present day' for all temporal evaluations. Any employment date in the resume that starts after this date is a 'future date'. Dates before this are in the past.**
 
-Work step-by-step: First, deeply understand the requirements from the job description. Second, thoroughly evaluate the candidate's skills and experience from their resume. Third, critically compare the two, noting every area of match and mismatch and assigning a score for each section. Finally, synthesize your findings into a comprehensive, structured report.
+        The response should be in ${language === 'pt' ? 'Portuguese' : 'English'}.
 
-Use clear, professional HR language and be as detailed and evidence-based as possible. Your output must be long, structured, and formatted strictly following the provided JSON schema.
+        Analyze the provided job description and candidate's resume to generate the report with the following sections:
+        - jobTitle: The title of the job.
+        - summary: A brief professional summary of the candidate's fit for the role.
+        - keyResponsibilitiesMatch: Compare the candidate's experience with the key responsibilities. For each, state 'Match', 'Partial', or 'No Match', with a brief explanation and an overall score (0-100).
+        - requiredSkillsMatch: Same analysis for required skills.
+        - niceToHaveSkillsMatch: Same analysis for "nice-to-have" skills.
+        - companyCultureFit: Analyze potential culture fit based on resume language. Provide a score (0-100).
+        - salaryAndBenefits: Note any mention of salary or benefits.
+        - redFlags: Identify potential red flags (e.g., employment gaps, job hopping, **future dates**).
+        - interviewQuestions: Suggest 3-5 insightful interview questions.
+        - overallFitScore: An overall suitability score (0-100).
+        - fitExplanation: A brief explanation for the overall score.
+        - compatibilityGaps: List critical gaps between the candidate's profile and job requirements.
+    `;
 
-Take a deep breath and work on this problem step-by-step.
-${langInstruction}
-`;
+    const jobPart = buildContentPart(jobInput);
+    const resumePart = buildContentPart(resumeInput);
 
-    parts.push({ text: `${systemInstruction}\n\n--- JOB DESCRIPTION ---\n` });
-    parts.push(...buildParts(jobDescription.content, jobDescription.format));
-    parts.push({ text: '\n\n--- CANDIDATE RESUME ---\n' });
-    parts.push(...buildParts(resume.content, resume.format));
+    const contents = {
+        parts: [
+            { text: "Job Description:" },
+            jobPart,
+            { text: "Candidate Resume:" },
+            resumePart,
+            { text: "Instructions:" },
+            { text: prompt }
+        ]
+    };
 
+    const response = await ai.models.generateContent({
+        model: MODEL_NAME,
+        contents: contents,
+        config: {
+            responseMimeType: "application/json",
+            responseSchema: recruiterAnalysisSchema,
+        },
+    });
+
+    // Fix: Per guidelines, access text output via response.text
+    const jsonText = response.text.trim();
     try {
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
-            contents: { parts },
-            config: { responseMimeType: 'application/json', responseSchema: recruiterAnalysisSchema }
-        });
-        return JSON.parse(response.text) as RecruiterAnalysisResult;
-    } catch (error) {
-        throw handleGeminiError(error, 'recruiter analysis');
+        return JSON.parse(jsonText) as RecruiterAnalysisResult;
+    } catch (e) {
+        console.error("Failed to parse JSON from Gemini response for recruiter analysis:", jsonText, e);
+        throw new Error("The analysis returned an invalid format. Please try again.");
     }
 };
 
+/**
+ * Generates a preliminary interview decision based on a prior analysis.
+ */
+export const generatePreliminaryDecision = async (
+    analysisResult: RecruiterAnalysisResult,
+    language: 'en' | 'pt'
+): Promise<PreliminaryDecisionResult> => {
+
+    const prompt = `
+        Based on the following detailed candidate analysis, make a preliminary decision on whether to recommend them for an interview.
+        The decision must be either 'Recommended for Interview' or 'Not Recommended'.
+        Provide a concise list of pros and cons, and a final explanation for your decision.
+        The entire response must be in JSON format, adhering to the provided schema.
+        
+        The response should be in ${language === 'pt' ? 'Portuguese' : 'English'}.
+
+        **Candidate Analysis:**
+        ${JSON.stringify(analysisResult, null, 2)}
+    `;
+
+    const response = await ai.models.generateContent({
+        model: MODEL_NAME,
+        contents: prompt,
+        config: {
+            responseMimeType: "application/json",
+            responseSchema: preliminaryDecisionSchema,
+        },
+    });
+
+    // Fix: Per guidelines, access text output via response.text
+    const jsonText = response.text.trim();
+    try {
+        return JSON.parse(jsonText) as PreliminaryDecisionResult;
+    } catch (e) {
+        console.error("Failed to parse JSON from Gemini response for preliminary decision:", jsonText, e);
+        throw new Error("The decision generation returned an invalid format. Please try again.");
+    }
+};
+
+/**
+ * Rewrites a resume to be tailored for a specific job description.
+ */
+export const rewriteResumeForJob = async (
+    jobInput: Input,
+    resumeInput: Input,
+    language: 'en' | 'pt'
+): Promise<RewrittenResumeResult> => {
+
+    const prompt = `
+        You are an expert career coach and professional resume writer. Your task is to rewrite the provided candidate's resume to better align with the specific job description provided.
+
+        **ABSOLUTE CRITICAL RULE: You MUST NOT invent, add, or fabricate any information, skills, or experiences that are not explicitly present in the original resume. Your task is to rephrase, reorder, and highlight existing information, not to create new content.**
+
+        Follow these steps:
+        1.  Start with a professional summary (3-4 lines) that is directly tailored to the target job description, using keywords from it while reflecting the candidate's actual experience.
+        2.  Review the candidate's work experience. For each role, reorder the bullet points to prioritize achievements and responsibilities that are most relevant to the job description.
+        3.  Refine the language of the bullet points to be more action-oriented and results-focused (e.g., "Led a team that increased sales by 20%" instead of "Was responsible for sales").
+        4.  Ensure the skills section highlights the technologies and abilities mentioned in the job description, but only those the candidate actually possesses.
+        5.  The final output should be the full text of the rewritten resume, formatted cleanly.
+
+        The response must be in JSON format, adhering to the provided schema.
+        The response should be in ${language === 'pt' ? 'Portuguese' : 'English'}.
+    `;
+    
+    const jobPart = buildContentPart(jobInput);
+    const resumePart = buildContentPart(resumeInput);
+    
+    const contents = {
+        parts: [
+            { text: "Job Description:" },
+            jobPart,
+            { text: "Original Candidate Resume:" },
+            resumePart,
+            { text: "Instructions:" },
+            { text: prompt }
+        ]
+    };
+
+    const response = await ai.models.generateContent({
+        model: MODEL_NAME,
+        contents: contents,
+        config: {
+            responseMimeType: "application/json",
+            responseSchema: rewrittenResumeSchema,
+        },
+    });
+    
+    // Fix: Per guidelines, access text output via response.text
+    const jsonText = response.text.trim();
+    try {
+        return JSON.parse(jsonText) as RewrittenResumeResult;
+    } catch (e) {
+        console.error("Failed to parse JSON from Gemini response for resume rewrite:", jsonText, e);
+        throw new Error("The resume rewrite returned an invalid format. Please try again.");
+    }
+};
+
+
+/**
+ * Analyzes interview transcript for consistency against resume and job description.
+ */
 export const analyzeInterviewConsistency = async (
-    jobDescription: { content: string | { data: string; mimeType: string }, format: 'text' | 'file' },
-    resume: { content: string | { data: string; mimeType: string }, format: 'text' | 'file' },
+    jobInput: Input,
+    resumeInput: Input,
     interviewTranscript: string,
+    compatibilityGaps: string[],
     language: 'en' | 'pt'
 ): Promise<ConsistencyAnalysisResult> => {
-    const parts: any[] = [];
-    const langInstruction = language === 'pt' ? 'Toda a análise deve ser em Português do Brasil.' : 'The entire analysis must be in English.';
     
-    const systemInstruction = `
-Act like a senior HR analyst with over 20 years of experience in talent acquisition, competency mapping, and organizational fit assessment. You have deep expertise in recruitment processes, resume evaluation, behavioral interviews, and job description analysis.
+    const currentDate = new Date().toISOString().split('T')[0]; // Get YYYY-MM-DD
 
-Your task is to analyze the consistency and alignment between three sources of information:
-1. The candidate’s resume (CV)
-2. The job description (JD) for the role they are applying for
-3. The transcript of their interview
+    const prompt = `
+        You are a senior hiring manager performing a final consistency check after a candidate's interview.
+        You have the original job description, the candidate's resume, a list of previously identified compatibility gaps, and the interview transcript.
 
-Objective:
-- Identify where the candidate’s profile matches, partially matches, or does not match the role requirements.
-- Assess both technical competencies and behavioral/soft skills alignment.
-- Highlight any gaps, risks, or red flags in the candidate’s profile.
-- Suggest a final recommendation: Strong fit / Partial fit / Weak fit.
+        **Crucial Rule: The current date for this analysis is ${currentDate}. Use this date as the 'present day' for all temporal evaluations.**
 
-Step-by-Step Instructions:
-1.  Parse the Input: Review the three sources of information provided (resume, job description, and interview transcript).
-2.  Compare Competencies: Match hard skills, certifications, and experience against job requirements. Identify missing or underrepresented skills.
-3.  Analyze Soft Skills: Evaluate communication style, motivation, leadership, teamwork, and problem-solving from the interview transcript. Compare behavioral evidence with JD expectations.
-4.  Check for Consistency: Cross-validate claims in the resume with what was said in the interview. Flag inconsistencies or contradictions.
-5.  Assign Scores: For each key analysis section (Soft Skills, Inconsistencies, Missing Info, New Info), assign a numerical score from 0 to 100 reflecting its significance, severity, or impact.
-6.  Provide Structured Output: Format your analysis strictly following the JSON schema provided. Ensure completeness and accuracy of each required field.
-7.  Final Evaluation: Give a narrative summary (1–2 paragraphs) explaining your reasoning. Provide a recommendation (Strong fit / Partial fit / Weak fit).
-8.  List Pros and Cons: Based on your complete analysis, provide a bulleted list of the main 'Pros' (reasons to hire) and 'Cons' (reasons not to hire or areas of concern).
-9.  Re-evaluate Overall Fit: Based on the combined information from all three documents, provide an updated overall fit score (0-100). This score should reflect your final assessment after the interview.
-10. Final Verdict: Conclude with a clear hiring recommendation ('Recommended for Hire' or 'Not Recommended'), indicating if the candidate is suitable for the role.
+        **Your analysis must cover the following points and be returned in a single JSON object conforming to the schema:**
+        - consistencyScore: (0-100) rating consistency between the resume and interview.
+        - summary: A summary of the interview's outcome and final assessment.
+        - recommendation: A fit recommendation: 'Strong Fit', 'Partial Fit', or 'Weak Fit'.
+        - softSkillsAnalysis: Analyze soft skills demonstrated in the interview, with a score (0-100).
+        - inconsistencies: List contradictions between the resume and interview. Score based on severity (higher score = better).
+        - missingFromInterview: List key skills from the resume NOT validated in the interview. Score based on what's missing (higher score = better).
+        - newInInterview: List new relevant skills that appeared only in the interview. Score this (higher score = better).
+        - gapResolutions: For each initial 'compatibilityGap', describe how the interview addressed it. Score how well gaps were resolved.
+        - prosForHiring: Final top pros for hiring.
+        - consForHiring: Final top cons or risks.
+        - updatedOverallFitScore: A final, updated fit score (0-100) after the interview.
+        - hiringDecision: Your final decision: 'Recommended for Hire' or 'Not Recommended'.
 
-Additional Requirements:
-- Use clear, professional HR language.
-- Be as detailed and evidence-based as possible, citing specific excerpts from the candidate’s documents.
-- Output must be long, structured, and comprehensive.
+        The response should be in ${language === 'pt' ? 'Portuguese' : 'English'}.
 
-Take a deep breath and work on this problem step-by-step.
-${langInstruction}
-`;
+        **Previously identified compatibility gaps to verify:**
+        - ${compatibilityGaps.length > 0 ? compatibilityGaps.join('\n- ') : 'None'}
 
-    parts.push({ text: `${systemInstruction}\n\n--- JOB DESCRIPTION ---\n` });
-    parts.push(...buildParts(jobDescription.content, jobDescription.format));
-    parts.push({ text: '\n\n--- CANDIDATE RESUME ---\n' });
-    parts.push(...buildParts(resume.content, resume.format));
-    parts.push({ text: '\n\n--- INTERVIEW TRANSCRIPT ---\n' });
-    parts.push({ text: interviewTranscript });
+        **Interview Transcript to analyze:**
+        ${interviewTranscript}
+    `;
 
+    const jobPart = buildContentPart(jobInput);
+    const resumePart = buildContentPart(resumeInput);
+
+    const contents = {
+        parts: [
+            { text: "Job Description:" },
+            jobPart,
+            { text: "Candidate Resume:" },
+            resumePart,
+            { text: "Analysis Instructions and Context:" },
+            { text: prompt }
+        ]
+    };
+
+    const response = await ai.models.generateContent({
+        model: MODEL_NAME,
+        contents: contents,
+        config: {
+            responseMimeType: "application/json",
+            responseSchema: consistencyAnalysisSchema,
+        },
+    });
+    
+    // Fix: Per guidelines, access text output via response.text
+    const jsonText = response.text.trim();
     try {
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
-            contents: { parts },
-            config: { responseMimeType: 'application/json', responseSchema: consistencySchema }
-        });
-        return JSON.parse(response.text) as ConsistencyAnalysisResult;
-    } catch (error) {
-        throw handleGeminiError(error, 'consistency analysis');
+        return JSON.parse(jsonText) as ConsistencyAnalysisResult;
+    } catch (e) {
+        console.error("Failed to parse JSON from Gemini response for consistency analysis:", jsonText, e);
+        throw new Error("The consistency analysis returned an invalid format. Please try again.");
     }
 };

@@ -1,8 +1,8 @@
 import React, { useState, useMemo, useRef } from 'react';
 import { useTranslations } from './contexts/LanguageContext';
-import { analyzeForRecruiter, analyzeInterviewConsistency } from './services/geminiService';
+import { analyzeForRecruiter, analyzeInterviewConsistency, generatePreliminaryDecision, rewriteResumeForJob } from './services/geminiService';
 import { parseDocumentFile, parseUrlContent } from './utils/parsers';
-import { RecruiterAnalysisResult, ConsistencyAnalysisResult } from './types';
+import { RecruiterAnalysisResult, ConsistencyAnalysisResult, MatchStatus, PreliminaryDecisionResult, RewrittenResumeResult } from './types';
 import LoadingSpinner from './components/LoadingSpinner';
 import { FileTextIcon, GlobeIcon, UploadIcon } from './components/icons';
 
@@ -25,13 +25,19 @@ const App: React.FC = () => {
   const [interviewTranscript, setInterviewTranscript] = useState('');
 
   const [analysisResult, setAnalysisResult] = useState<RecruiterAnalysisResult | null>(null);
+  const [preliminaryDecision, setPreliminaryDecision] = useState<PreliminaryDecisionResult | null>(null);
   const [consistencyResult, setConsistencyResult] = useState<ConsistencyAnalysisResult | null>(null);
+  const [rewrittenResume, setRewrittenResume] = useState<RewrittenResumeResult | null>(null);
 
   const [isLoading, setIsLoading] = useState(false);
+  const [isGeneratingDecision, setIsGeneratingDecision] = useState(false);
   const [isAnalyzingConsistency, setIsAnalyzingConsistency] = useState(false);
+  const [isRewritingResume, setIsRewritingResume] = useState(false);
 
   const [error, setError] = useState<string | null>(null);
+  const [decisionError, setDecisionError] = useState<string | null>(null);
   const [consistencyError, setConsistencyError] = useState<string | null>(null);
+  const [rewriteError, setRewriteError] = useState<string | null>(null);
 
   const jobDescriptionFileRef = useRef<HTMLInputElement>(null);
   const resumeFileRef = useRef<HTMLInputElement>(null);
@@ -74,9 +80,13 @@ const App: React.FC = () => {
 
     setIsLoading(true);
     setAnalysisResult(null);
-    setConsistencyResult(null); 
+    setPreliminaryDecision(null);
+    setConsistencyResult(null);
+    setRewrittenResume(null);
     setError(null);
+    setDecisionError(null);
     setConsistencyError(null);
+    setRewriteError(null);
 
     try {
       const jobInput = await getJobInput();
@@ -91,8 +101,24 @@ const App: React.FC = () => {
     }
   };
 
+  const handleGenerateDecision = async () => {
+      if (!analysisResult) return;
+      setIsGeneratingDecision(true);
+      setDecisionError(null);
+      setPreliminaryDecision(null);
+      try {
+          const decision = await generatePreliminaryDecision(analysisResult, language);
+          setPreliminaryDecision(decision);
+      } catch (e) {
+          const errorMessage = e instanceof Error ? e.message : t('error.unknown');
+          setDecisionError(errorMessage);
+      } finally {
+          setIsGeneratingDecision(false);
+      }
+  };
+
   const handleAnalyzeConsistency = async () => {
-    if (!interviewTranscript) return;
+    if (!interviewTranscript || !analysisResult) return;
 
     setIsAnalyzingConsistency(true);
     setConsistencyResult(null);
@@ -102,13 +128,31 @@ const App: React.FC = () => {
         const jobInput = await getJobInput();
         const resumeInput = await getResumeInput();
 
-        const result = await analyzeInterviewConsistency(jobInput, resumeInput, interviewTranscript, language);
+        const result = await analyzeInterviewConsistency(jobInput, resumeInput, interviewTranscript, analysisResult.compatibilityGaps, language);
         setConsistencyResult(result);
     } catch (e) {
         const errorMessage = e instanceof Error ? e.message : t('error.unknownConsistency');
         setConsistencyError(errorMessage);
     } finally {
         setIsAnalyzingConsistency(false);
+    }
+  };
+
+  const handleRewriteResume = async () => {
+    if (!analysisResult) return;
+    setIsRewritingResume(true);
+    setRewriteError(null);
+    setRewrittenResume(null);
+    try {
+        const jobInput = await getJobInput();
+        const resumeInput = await getResumeInput();
+        const result = await rewriteResumeForJob(jobInput, resumeInput, language);
+        setRewrittenResume(result);
+    } catch (e) {
+        const errorMessage = e instanceof Error ? e.message : t('error.unknownRewrite');
+        setRewriteError(errorMessage);
+    } finally {
+        setIsRewritingResume(false);
     }
   };
 
@@ -129,6 +173,44 @@ const App: React.FC = () => {
     }
   };
   
+  const handleGlobalReset = () => {
+    // Reset all inputs
+    setJobInputType('text');
+    setResumeInputType('text');
+    setJobDescriptionText('');
+    setJobDescriptionUrl('');
+    setJobDescriptionFile(null);
+    setResumeText('');
+    setResumeFile(null);
+    setInterviewTranscript('');
+
+    // Reset all results
+    setAnalysisResult(null);
+    setPreliminaryDecision(null);
+    setConsistencyResult(null);
+    setRewrittenResume(null);
+
+    // Reset all loading states
+    setIsLoading(false);
+    setIsGeneratingDecision(false);
+    setIsAnalyzingConsistency(false);
+    setIsRewritingResume(false);
+
+    // Reset all errors
+    setError(null);
+    setDecisionError(null);
+    setConsistencyError(null);
+    setRewriteError(null);
+
+    // Clear file input visuals
+    if (jobDescriptionFileRef.current) {
+      jobDescriptionFileRef.current.value = '';
+    }
+    if (resumeFileRef.current) {
+      resumeFileRef.current.value = '';
+    }
+  };
+
   const TabButton: React.FC<{ active: boolean; onClick: () => void; children: React.ReactNode }> = ({ active, onClick, children }) => (
     <button
       onClick={onClick}
@@ -141,13 +223,29 @@ const App: React.FC = () => {
       {children}
     </button>
   );
+  
+  const ResetIcon = (props: React.SVGProps<SVGSVGElement>) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+      <path d="M3 3v5h5"/>
+    </svg>
+  );
 
   return (
     <div className="bg-gray-900 text-white min-h-screen font-sans">
       <div className="container mx-auto px-4 py-8">
         <header className="flex justify-between items-center mb-8">
             <h1 className="text-4xl font-bold text-cyan-400">{t('appTitle')}</h1>
-          <div className="flex gap-2">
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={handleGlobalReset}
+              className="flex items-center gap-2 px-3 py-1.5 text-sm rounded bg-gray-700 hover:bg-gray-600 transition-colors"
+              title={t('buttons.resetApp')}
+            >
+              <ResetIcon />
+              <span>{t('buttons.resetApp')}</span>
+            </button>
+            <div className="h-6 w-px bg-gray-600"></div>
             <button onClick={() => setLanguage('en')} className={`px-3 py-1 text-sm rounded ${language === 'en' ? 'bg-cyan-500 text-white' : 'bg-gray-700'}`}>EN</button>
             <button onClick={() => setLanguage('pt')} className={`px-3 py-1 text-sm rounded ${language === 'pt' ? 'bg-cyan-500 text-white' : 'bg-gray-700'}`}>PT</button>
           </div>
@@ -210,25 +308,51 @@ const App: React.FC = () => {
             </div>
 
             {analysisResult && !isLoading && (
-              <div className="border-t border-cyan-500 pt-6">
-                <h2 className="text-2xl font-semibold mb-4 text-gray-200">{t('consistency.title')}</h2>
-                <textarea 
-                  value={interviewTranscript} 
-                  onChange={e => setInterviewTranscript(e.target.value)} 
-                  placeholder={t('consistency.placeholder')} 
-                  className="w-full h-32 p-3 bg-gray-700 rounded border border-gray-600 focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition mb-4" 
-                />
-                <button 
-                  onClick={handleAnalyzeConsistency} 
-                  disabled={!interviewTranscript || isAnalyzingConsistency} 
-                  className="w-full bg-teal-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-teal-700 transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed flex justify-center items-center gap-2"
-                >
-                  {isAnalyzingConsistency ? <><LoadingSpinner /> {t('buttons.analyzingConsistency')}</> : t('buttons.analyzeConsistency')}
-                </button>
-                {isAnalyzingConsistency && <div className="flex flex-col items-center justify-center text-gray-400 mt-4"><LoadingSpinner /><p className="mt-2">{t('consistency.loading')}</p></div>}
-                {consistencyError && <div className="mt-4 bg-red-900 border border-red-500 text-red-200 px-4 py-3 rounded-lg"><p className="font-bold">{t('error.title')}</p><p>{consistencyError}</p></div>}
-                {consistencyResult && <ConsistencyResultDisplay result={consistencyResult} />}
-              </div>
+              <>
+                <div className="border-t border-cyan-500 pt-6 space-y-4">
+                  {isGeneratingDecision && <div className="flex flex-col items-center justify-center text-gray-400 mt-4"><LoadingSpinner /><p className="mt-2">{t('buttons.generatingDecision')}</p></div>}
+                  {decisionError && <div className="mt-4 bg-red-900 border border-red-500 text-red-200 px-4 py-3 rounded-lg"><p className="font-bold">{t('error.title')}</p><p>{decisionError}</p></div>}
+                  {preliminaryDecision ? (
+                    <PreliminaryDecisionDisplay result={preliminaryDecision} />
+                  ) : (
+                    <button onClick={handleGenerateDecision} disabled={isGeneratingDecision} className="w-full bg-indigo-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-indigo-700 transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed flex justify-center items-center gap-2">
+                      {isGeneratingDecision ? <><LoadingSpinner /> {t('buttons.generatingDecision')}</> : t('buttons.generateDecision')}
+                    </button>
+                  )}
+                </div>
+
+                <div className="border-t border-cyan-500 pt-6 space-y-4">
+                  {isRewritingResume && <div className="flex flex-col items-center justify-center text-gray-400 mt-4"><LoadingSpinner /><p className="mt-2">{t('rewrite.loading')}</p></div>}
+                  {rewriteError && <div className="mt-4 bg-red-900 border border-red-500 text-red-200 px-4 py-3 rounded-lg"><p className="font-bold">{t('error.title')}</p><p>{rewriteError}</p></div>}
+                  {rewrittenResume ? (
+                      <RewrittenResumeDisplay result={rewrittenResume} />
+                  ) : (
+                      <button onClick={handleRewriteResume} disabled={isRewritingResume} className="w-full bg-purple-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-purple-700 transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed flex justify-center items-center gap-2">
+                          {isRewritingResume ? <><LoadingSpinner /> {t('buttons.rewritingResume')}</> : t('buttons.rewriteResume')}
+                      </button>
+                  )}
+                </div>
+              
+                <div className="border-t border-cyan-500 pt-6">
+                  <h2 className="text-2xl font-semibold mb-4 text-gray-200">{t('consistency.title')}</h2>
+                  <textarea 
+                    value={interviewTranscript} 
+                    onChange={e => setInterviewTranscript(e.target.value)} 
+                    placeholder={t('consistency.placeholder')} 
+                    className="w-full h-32 p-3 bg-gray-700 rounded border border-gray-600 focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition mb-4" 
+                  />
+                  <button 
+                    onClick={handleAnalyzeConsistency} 
+                    disabled={!interviewTranscript || isAnalyzingConsistency} 
+                    className="w-full bg-teal-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-teal-700 transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed flex justify-center items-center gap-2"
+                  >
+                    {isAnalyzingConsistency ? <><LoadingSpinner /> {t('buttons.analyzingConsistency')}</> : t('buttons.analyzeConsistency')}
+                  </button>
+                  {isAnalyzingConsistency && <div className="flex flex-col items-center justify-center text-gray-400 mt-4"><LoadingSpinner /><p className="mt-2">{t('consistency.loading')}</p></div>}
+                  {consistencyError && <div className="mt-4 bg-red-900 border border-red-500 text-red-200 px-4 py-3 rounded-lg"><p className="font-bold">{t('error.title')}</p><p>{consistencyError}</p></div>}
+                  {consistencyResult && <ConsistencyResultDisplay result={consistencyResult} />}
+                </div>
+              </>
             )}
           </div>
         </main>
@@ -243,6 +367,13 @@ const getScoreColor = (score: number) => {
     return { text: 'text-red-400', bg: 'bg-red-500/20', border: 'border-red-500' };
 };
 
+const getHiringDecisionStyle = (decision: string) => {
+    if (decision === 'Recommended for Hire' || decision === 'Recommended for Interview') {
+        return 'bg-green-600 text-green-100';
+    }
+    return 'bg-red-600 text-red-100';
+};
+
 const ScoreBadge: React.FC<{ score: number }> = ({ score }) => {
     const { text, bg } = getScoreColor(score);
     return (
@@ -251,6 +382,35 @@ const ScoreBadge: React.FC<{ score: number }> = ({ score }) => {
         </span>
     );
 };
+
+const MatchStatusBadge: React.FC<{ status: MatchStatus }> = ({ status }) => {
+    const { t } = useTranslations();
+    const styles = {
+        'Match': { bg: 'bg-green-500/20', text: 'text-green-300' },
+        'Partial': { bg: 'bg-yellow-500/20', text: 'text-yellow-300' },
+        'No Match': { bg: 'bg-red-500/20', text: 'text-red-400' },
+    };
+    const style = styles[status] || styles['Partial'];
+    const statusKey = `status.${status.toLowerCase().replace(' ', '')}`;
+    
+    return (
+        <span className={`inline-block px-2 py-0.5 text-xs font-semibold rounded-md ${style.bg} ${style.text}`}>
+            {t(statusKey)}
+        </span>
+    );
+};
+
+const CheckIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 inline-block flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
+        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+    </svg>
+);
+
+const XIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 inline-block flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
+        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+    </svg>
+);
 
 const RecruiterAnalysisResultDisplay: React.FC<{ result: RecruiterAnalysisResult }> = ({ result }) => {
   const { t } = useTranslations();
@@ -261,8 +421,8 @@ const RecruiterAnalysisResultDisplay: React.FC<{ result: RecruiterAnalysisResult
   // Memoize the keyword list for performance
   const keywords = useMemo(() => {
     const allKeywords = [
-      ...(result.requiredSkillsMatch?.items || []),
-      ...(result.niceToHaveSkillsMatch?.items || []),
+      ...(result.requiredSkillsMatch?.items.map(i => i.item) || []),
+      ...(result.niceToHaveSkillsMatch?.items.map(i => i.item) || []),
     ];
     
     // Extract individual words from skill phrases, clean them up, and remove duplicates.
@@ -306,11 +466,14 @@ const RecruiterAnalysisResultDisplay: React.FC<{ result: RecruiterAnalysisResult
     <div className="space-y-6 text-gray-300">
       <div className="p-4 bg-gray-700/50 rounded-lg">
         <h3 className="text-xl font-bold text-cyan-400">{result.jobTitle}</h3>
-        <div className="flex items-center justify-between mt-2">
-            <div className="flex items-baseline gap-4">
-                <p className={`text-4xl font-bold ${scoreColors.text}`}>{result.overallFitScore}<span className="text-2xl">%</span></p>
-                <p className="text-lg font-semibold text-gray-200">{t('analysis.overallFit')}</p>
+        
+        <div className="flex items-center justify-center mt-4 text-center">
+            <div>
+                 <p className="text-sm text-gray-400 mb-1">{t('analysis.overallFit')}</p>
+                 <p className={`text-4xl font-bold ${scoreColors.text}`}>{result.overallFitScore}<span className="text-2xl">%</span></p>
             </div>
+        </div>
+         <div className="flex items-center justify-center mt-4 pt-4 border-t border-gray-600">
             <button
                 onClick={() => setIsHighlightingEnabled(prev => !prev)}
                 className={`px-3 py-1 text-sm rounded-md transition-colors ${
@@ -341,21 +504,45 @@ const RecruiterAnalysisResultDisplay: React.FC<{ result: RecruiterAnalysisResult
       )}
 
       <ResultSection title={t('analysis.keyResponsibilities')} score={result.keyResponsibilitiesMatch?.score}>
-        <ul className="list-disc list-inside space-y-1">
-          {result.keyResponsibilitiesMatch?.items.map((item, index) => <li key={index}>{item}</li>)}
+        <ul className="space-y-4">
+          {result.keyResponsibilitiesMatch?.items.map((matchedItem, index) => (
+            <li key={index} className="flex flex-col">
+              <div className="flex items-center gap-2 mb-1">
+                <MatchStatusBadge status={matchedItem.status} />
+                <span className="font-semibold text-gray-200">{matchedItem.item}</span>
+              </div>
+              <p className="pl-4 text-sm text-gray-400 border-l-2 border-gray-700 ml-2">{matchedItem.explanation}</p>
+            </li>
+          ))}
         </ul>
       </ResultSection>
 
       <ResultSection title={t('analysis.requiredSkills')} score={result.requiredSkillsMatch?.score}>
-        <ul className="list-disc list-inside space-y-1">
-          {result.requiredSkillsMatch?.items.map((item, index) => <li key={index}>{item}</li>)}
+        <ul className="space-y-4">
+          {result.requiredSkillsMatch?.items.map((matchedItem, index) => (
+            <li key={index} className="flex flex-col">
+              <div className="flex items-center gap-2 mb-1">
+                <MatchStatusBadge status={matchedItem.status} />
+                <span className="font-semibold text-gray-200">{matchedItem.item}</span>
+              </div>
+              <p className="pl-4 text-sm text-gray-400 border-l-2 border-gray-700 ml-2">{matchedItem.explanation}</p>
+            </li>
+          ))}
         </ul>
       </ResultSection>
 
       {result.niceToHaveSkillsMatch?.items && result.niceToHaveSkillsMatch.items.length > 0 && (
         <ResultSection title={t('analysis.niceToHaveSkills')} score={result.niceToHaveSkillsMatch?.score}>
-            <ul className="list-disc list-inside space-y-1">
-            {result.niceToHaveSkillsMatch?.items.map((item, index) => <li key={index}>{item}</li>)}
+            <ul className="space-y-4">
+              {result.niceToHaveSkillsMatch?.items.map((matchedItem, index) => (
+                <li key={index} className="flex flex-col">
+                  <div className="flex items-center gap-2 mb-1">
+                    <MatchStatusBadge status={matchedItem.status} />
+                    <span className="font-semibold text-gray-200">{matchedItem.item}</span>
+                  </div>
+                  <p className="pl-4 text-sm text-gray-400 border-l-2 border-gray-700 ml-2">{matchedItem.explanation}</p>
+                </li>
+              ))}
             </ul>
         </ResultSection>
       )}
@@ -389,6 +576,69 @@ const RecruiterAnalysisResultDisplay: React.FC<{ result: RecruiterAnalysisResult
   );
 };
 
+
+const PreliminaryDecisionDisplay: React.FC<{ result: PreliminaryDecisionResult }> = ({ result }) => {
+    const { t } = useTranslations();
+    const isRecommended = result.decision === 'Recommended for Interview';
+    return (
+        <div className="p-4 bg-gray-700/50 rounded-lg space-y-4">
+            <ResultSection title={t('decision.title')}>
+                <div className="text-center mb-4">
+                    <span className={`px-4 py-2 text-base font-bold rounded-full ${getHiringDecisionStyle(result.decision)}`}>
+                        {t(isRecommended ? 'decision.recommended' : 'decision.notRecommended')}
+                    </span>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {result.pros && result.pros.length > 0 && (
+                        <div>
+                             <h5 className="font-semibold text-green-400 mb-2">{t('decision.pros')}</h5>
+                            <ul className="space-y-2">
+                                {result.pros.map((item, index) => 
+                                    <li key={index} className="flex items-start text-green-300">
+                                        <CheckIcon />
+                                        <span>{item}</span>
+                                    </li>
+                                )}
+                            </ul>
+                        </div>
+                    )}
+                    {result.cons && result.cons.length > 0 && (
+                        <div>
+                             <h5 className="font-semibold text-red-400 mb-2">{t('decision.cons')}</h5>
+                            <ul className="space-y-2">
+                                {result.cons.map((item, index) => 
+                                    <li key={index} className="flex items-start text-red-400">
+                                        <XIcon />
+                                        <span>{item}</span>
+                                    </li>
+                                )}
+                            </ul>
+                        </div>
+                    )}
+                </div>
+                <div className="mt-4 border-t border-gray-600 pt-4">
+                     <h5 className="font-semibold text-gray-200 mb-2">{t('decision.explanation')}</h5>
+                     <p className="text-gray-300">{result.explanation}</p>
+                </div>
+            </ResultSection>
+        </div>
+    );
+};
+
+const RewrittenResumeDisplay: React.FC<{ result: RewrittenResumeResult }> = ({ result }) => {
+    const { t } = useTranslations();
+    return (
+        <div className="p-4 bg-gray-700/50 rounded-lg space-y-4">
+            <ResultSection title={t('rewrite.title')}>
+                <pre className="whitespace-pre-wrap font-sans text-sm bg-gray-900/50 p-4 rounded-md border border-gray-600">
+                    {result.rewrittenResume}
+                </pre>
+            </ResultSection>
+        </div>
+    );
+};
+
+
 const ConsistencyResultDisplay: React.FC<{ result: ConsistencyAnalysisResult }> = ({ result }) => {
     const { t } = useTranslations();
     const {text: consistencyScoreColor} = getScoreColor(result.consistencyScore);
@@ -403,25 +653,6 @@ const ConsistencyResultDisplay: React.FC<{ result: ConsistencyAnalysisResult }> 
         }
     };
     
-    const getHiringDecisionStyle = (decision: string) => {
-        if (decision === 'Recommended for Hire') {
-            return 'bg-green-600 text-green-100';
-        }
-        return 'bg-red-600 text-red-100';
-    };
-    
-    const CheckIcon = () => (
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 inline-block flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
-            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-        </svg>
-    );
-
-    const XIcon = () => (
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 inline-block flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
-            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-        </svg>
-    );
-
     return (
         <div className="space-y-6 text-gray-300 mt-4">
              <div className="p-4 bg-gray-700/50 rounded-lg space-y-4">
@@ -454,6 +685,19 @@ const ConsistencyResultDisplay: React.FC<{ result: ConsistencyAnalysisResult }> 
             <ResultSection title={t('consistency.summary')}>
                 <p>{result.summary}</p>
             </ResultSection>
+
+            {result.gapResolutions && result.gapResolutions.items.length > 0 && (
+                <ResultSection title={t('consistency.gapResolutions')} score={result.gapResolutions.score}>
+                    <ul className="space-y-4">
+                        {result.gapResolutions.items.map((item, index) => (
+                            <li key={index} className="p-3 bg-gray-700/50 rounded-lg">
+                                <p className="text-sm font-semibold text-yellow-300 mb-2">{t('consistency.gapLabel')}: <span className="font-normal">{item.gap}</span></p>
+                                <p className="text-sm text-green-300 border-l-2 border-green-500 pl-3">{item.resolution}</p>
+                            </li>
+                        ))}
+                    </ul>
+                </ResultSection>
+            )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                  {result.prosForHiring && result.prosForHiring.length > 0 && (
