@@ -1,10 +1,11 @@
-import React, { useState, useMemo, useRef } from 'react';
+
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useTranslations } from './contexts/LanguageContext';
 import { analyzeForRecruiter, analyzeInterviewConsistency, generatePreliminaryDecision, rewriteResumeForJob } from './services/geminiService';
-import { parseDocumentFile, parseUrlContent } from './utils/parsers';
+import { parseDocumentFile, parseUrlContent, downloadFile } from './utils/parsers';
 import { RecruiterAnalysisResult, ConsistencyAnalysisResult, MatchStatus, PreliminaryDecisionResult, RewrittenResumeResult } from './types';
 import LoadingSpinner from './components/LoadingSpinner';
-import { FileTextIcon, GlobeIcon, UploadIcon } from './components/icons';
+import { FileTextIcon, GlobeIcon, UploadIcon, DownloadIcon, SunIcon, MoonIcon } from './components/icons';
 
 type JobInputType = 'text' | 'url' | 'file';
 type ResumeInputType = 'text' | 'file';
@@ -41,6 +42,31 @@ const App: React.FC = () => {
 
   const jobDescriptionFileRef = useRef<HTMLInputElement>(null);
   const resumeFileRef = useRef<HTMLInputElement>(null);
+
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    if (typeof window !== 'undefined' && localStorage.getItem('theme')) {
+      return localStorage.getItem('theme') as 'light' | 'dark';
+    }
+    if (typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      return 'dark';
+    }
+    return 'light';
+  });
+
+  useEffect(() => {
+    const root = window.document.documentElement;
+    if (theme === 'dark') {
+      root.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      root.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
+    }
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme(theme === 'light' ? 'dark' : 'light');
+  };
   
   const isAnalyzeDisabled = useMemo(() => {
     if (isLoading) return true;
@@ -216,8 +242,8 @@ const App: React.FC = () => {
       onClick={onClick}
       className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-t-lg transition-colors ${
         active
-          ? 'bg-gray-700 text-white border-b-2 border-cyan-400'
-          : 'text-gray-400 hover:bg-gray-800 hover:text-gray-300'
+          ? 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white border-b-2 border-cyan-500'
+          : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-700 dark:hover:text-gray-300'
       }`}
     >
       {children}
@@ -232,124 +258,132 @@ const App: React.FC = () => {
   );
 
   return (
-    <div className="bg-gray-900 text-white min-h-screen font-sans">
+    <div className="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white min-h-screen font-sans transition-colors duration-300">
       <div className="container mx-auto px-4 py-8">
         <header className="flex justify-between items-center mb-8">
-            <h1 className="text-4xl font-bold text-cyan-400">{t('appTitle')}</h1>
+            <h1 className="text-4xl font-bold text-cyan-500 dark:text-cyan-400">{t('appTitle')}</h1>
           <div className="flex items-center gap-2">
             <button 
               onClick={handleGlobalReset}
-              className="flex items-center gap-2 px-3 py-1.5 text-sm rounded bg-gray-700 hover:bg-gray-600 transition-colors"
+              className="flex items-center gap-2 px-3 py-1.5 text-sm rounded bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
               title={t('buttons.resetApp')}
             >
               <ResetIcon />
-              <span>{t('buttons.resetApp')}</span>
+              <span className="hidden sm:inline">{t('buttons.resetApp')}</span>
             </button>
-            <div className="h-6 w-px bg-gray-600"></div>
-            <button onClick={() => setLanguage('en')} className={`px-3 py-1 text-sm rounded ${language === 'en' ? 'bg-cyan-500 text-white' : 'bg-gray-700'}`}>EN</button>
-            <button onClick={() => setLanguage('pt')} className={`px-3 py-1 text-sm rounded ${language === 'pt' ? 'bg-cyan-500 text-white' : 'bg-gray-700'}`}>PT</button>
+            <div className="h-6 w-px bg-gray-300 dark:bg-gray-600"></div>
+             <button
+              onClick={toggleTheme}
+              className="flex items-center justify-center w-9 h-8 rounded bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+              title={theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
+            >
+              {theme === 'light' ? <MoonIcon className="w-5 h-5 text-gray-700" /> : <SunIcon className="w-5 h-5 text-gray-200" />}
+            </button>
+            <div className="h-6 w-px bg-gray-300 dark:bg-gray-600"></div>
+            <button onClick={() => setLanguage('en')} className={`px-3 py-1 text-sm rounded ${language === 'en' ? 'bg-cyan-500 text-white' : 'bg-gray-200 dark:bg-gray-700'}`}>EN</button>
+            <button onClick={() => setLanguage('pt')} className={`px-3 py-1 text-sm rounded ${language === 'pt' ? 'bg-cyan-500 text-white' : 'bg-gray-200 dark:bg-gray-700'}`}>PT</button>
           </div>
         </header>
 
-        <main className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <main className="grid grid-cols-1 gap-8">
           <div className="flex flex-col gap-6">
             {/* Job Description Input */}
-            <div className="bg-gray-800 p-6 rounded-lg shadow-lg">
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md border border-gray-200 dark:border-transparent">
               <div className="flex justify-between items-center mb-4">
-                <h2 className="text-2xl font-semibold text-gray-200">{t('jobDescription.title')}</h2>
-                <button onClick={handleClearJobDescription} className="flex items-center gap-1.5 px-3 py-1 text-xs bg-gray-700 text-gray-300 rounded-md hover:bg-gray-600 transition-colors">
+                <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-200">{t('jobDescription.title')}</h2>
+                <button onClick={handleClearJobDescription} className="flex items-center gap-1.5 px-3 py-1 text-xs bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-md hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
                   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12.1 3.1 12 3 11.9 3.1C10.4 3.5 9 4.6 8.2 6.2c-.3.6-.5 1.2-.5 1.8 0 .4.1.8.2 1.2l.2.7.2.7c.3.8.7 1.6 1.2 2.3l.2.3.2.3c.2.2.3.4.5.6s.4.4.6.6l.3.2.3.2c.7.5 1.5.9 2.3 1.2l.7.2.7.2c.4.1.8.2 1.2.2.6 0 1.2-.2 1.8-.5 1.6-.8 2.7-2.2 3.1-3.7l.1-.6V12v-.1-.1l-.1-.6c-.4-1.5-1.5-2.8-3.1-3.2l-.6-.1h-.1V8h-.1l-.6.1zM12 8.5c-.3 0-.5.2-.5.5v2.5c0 .3.2.5.5.5s.5-.2.5-.5V9c0-.3-.2-.5-.5-.5zm0 5.5c-.3 0-.5.2-.5.5v.5c0 .3.2.5.5.5s.5-.2.5-.5v-.5c0-.3-.2-.5-.5-.5z" /><path d="m21.6 14.1-3.2-1.3c-.4-.1-.8.1-1 .4l-1.3 1.3c-1.3-1.3-2.3-2.3-3.6-3.6l1.3-1.3c.3-.3.5-.7.4-1L14.1 5.4c-.1-.4-.5-.7-.9-.7H12c-.5 0-.9.4-1 .9l-.7 3.2c-.1.4.1.8.4 1l1.3 1.3c1.3 1.3 2.3 2.3 3.6 3.6l-1.3 1.3c-.3.3-.5.7-.4 1l.7 3.2c.1.5.6.9 1.1.9h1.2c.4 0 .8-.3.9-.7z" /></svg>
                   {t('buttons.clear')}
                 </button>
               </div>
-              <div className="border-b border-gray-600 mb-4">
+              <div className="border-b border-gray-200 dark:border-gray-600 mb-4">
                   <div className="flex -mb-px">
                       <TabButton active={jobInputType === 'text'} onClick={() => setJobInputType('text')}><FileTextIcon className="w-4 h-4" /> {t('jobDescription.pasteText')}</TabButton>
                       <TabButton active={jobInputType === 'url'} onClick={() => setJobInputType('url')}><GlobeIcon className="w-4 h-4" /> {t('jobDescription.fromUrl')}</TabButton>
                       <TabButton active={jobInputType === 'file'} onClick={() => setJobInputType('file')}><UploadIcon className="w-4 h-4" /> {t('jobDescription.uploadFile')}</TabButton>
                   </div>
               </div>
-              {jobInputType === 'text' && <textarea value={jobDescriptionText} onChange={e => setJobDescriptionText(e.target.value)} placeholder={t('jobDescription.textPlaceholder')} className="w-full h-40 p-3 bg-gray-700 rounded border border-gray-600 focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition" />}
-              {jobInputType === 'url' && <input type="url" value={jobDescriptionUrl} onChange={e => setJobDescriptionUrl(e.target.value)} placeholder={t('jobDescription.urlPlaceholder')} className="w-full p-3 bg-gray-700 rounded border border-gray-600 focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition" />}
-              {jobInputType === 'file' && <input ref={jobDescriptionFileRef} type="file" onChange={e => setJobDescriptionFile(e.target.files ? e.target.files[0] : null)} accept=".pdf,.docx" className="w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-cyan-600 file:text-white hover:file:bg-cyan-700" />}
+              {jobInputType === 'text' && <textarea value={jobDescriptionText} onChange={e => setJobDescriptionText(e.target.value)} placeholder={t('jobDescription.textPlaceholder')} className="w-full h-40 p-3 bg-gray-100 dark:bg-gray-700 rounded border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition" />}
+              {jobInputType === 'url' && <input type="url" value={jobDescriptionUrl} onChange={e => setJobDescriptionUrl(e.target.value)} placeholder={t('jobDescription.urlPlaceholder')} className="w-full p-3 bg-gray-100 dark:bg-gray-700 rounded border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition" />}
+              {jobInputType === 'file' && <input ref={jobDescriptionFileRef} type="file" onChange={e => setJobDescriptionFile(e.target.files ? e.target.files[0] : null)} accept=".pdf,.docx" className="w-full text-sm text-gray-500 dark:text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-cyan-600 file:text-white hover:file:bg-cyan-700" />}
             </div>
 
             {/* Resume Input */}
-            <div className="bg-gray-800 p-6 rounded-lg shadow-lg">
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md border border-gray-200 dark:border-transparent">
               <div className="flex justify-between items-center mb-4">
-                <h2 className="text-2xl font-semibold text-gray-200">{t('resume.title')}</h2>
-                <button onClick={handleClearResume} className="flex items-center gap-1.5 px-3 py-1 text-xs bg-gray-700 text-gray-300 rounded-md hover:bg-gray-600 transition-colors">
+                <h2 className="text-2xl font-semibold text-gray-800 dark:text-gray-200">{t('resume.title')}</h2>
+                <button onClick={handleClearResume} className="flex items-center gap-1.5 px-3 py-1 text-xs bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-md hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12.1 3.1 12 3 11.9 3.1C10.4 3.5 9 4.6 8.2 6.2c-.3.6-.5 1.2-.5 1.8 0 .4.1.8.2 1.2l.2.7.2.7c.3.8.7 1.6 1.2 2.3l.2.3.2.3c.2.2.3.4.5.6s.4.4.6.6l.3.2.3.2c.7.5 1.5.9 2.3 1.2l.7.2.7.2c.4.1.8.2 1.2.2.6 0 1.2-.2 1.8-.5 1.6-.8 2.7-2.2 3.1-3.7l.1-.6V12v-.1-.1l-.1-.6c-.4-1.5-1.5-2.8-3.1-3.2l-.6-.1h-.1V8h-.1l-.6.1zM12 8.5c-.3 0-.5.2-.5.5v2.5c0 .3.2.5.5.5s.5-.2.5-.5V9c0-.3-.2-.5-.5-.5zm0 5.5c-.3 0-.5.2-.5.5v.5c0 .3.2.5.5.5s.5-.2.5-.5v-.5c0-.3-.2-.5-.5-.5z" /><path d="m21.6 14.1-3.2-1.3c-.4-.1-.8.1-1 .4l-1.3 1.3c-1.3-1.3-2.3-2.3-3.6-3.6l1.3-1.3c.3-.3.5-.7.4-1L14.1 5.4c-.1-.4-.5-.7-.9-.7H12c-.5 0-.9.4-1 .9l-.7 3.2c-.1.4.1.8.4 1l1.3 1.3c1.3 1.3 2.3 2.3 3.6 3.6l-1.3 1.3c-.3.3-.5.7-.4 1l.7 3.2c.1.5.6.9 1.1.9h1.2c.4 0 .8-.3.9-.7z" /></svg>
                   {t('buttons.clear')}
                 </button>
               </div>
-              <div className="border-b border-gray-600 mb-4">
+              <div className="border-b border-gray-200 dark:border-gray-600 mb-4">
                   <div className="flex -mb-px">
                       <TabButton active={resumeInputType === 'text'} onClick={() => setResumeInputType('text')}><FileTextIcon className="w-4 h-4" /> {t('resume.pasteText')}</TabButton>
                       <TabButton active={resumeInputType === 'file'} onClick={() => setResumeInputType('file')}><UploadIcon className="w-4 h-4" /> {t('resume.uploadFile')}</TabButton>
                   </div>
               </div>
-              {resumeInputType === 'text' && <textarea value={resumeText} onChange={e => setResumeText(e.target.value)} placeholder={t('resume.textPlaceholder')} className="w-full h-40 p-3 bg-gray-700 rounded border border-gray-600 focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition" />}
-              {resumeInputType === 'file' && <input ref={resumeFileRef} type="file" onChange={e => setResumeFile(e.target.files ? e.target.files[0] : null)} accept=".pdf,.docx" className="w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-cyan-600 file:text-white hover:file:bg-cyan-700" />}
+              {resumeInputType === 'text' && <textarea value={resumeText} onChange={e => setResumeText(e.target.value)} placeholder={t('resume.textPlaceholder')} className="w-full h-40 p-3 bg-gray-100 dark:bg-gray-700 rounded border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition" />}
+              {resumeInputType === 'file' && <input ref={resumeFileRef} type="file" onChange={e => setResumeFile(e.target.files ? e.target.files[0] : null)} accept=".pdf,.docx" className="w-full text-sm text-gray-500 dark:text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-cyan-600 file:text-white hover:file:bg-cyan-700" />}
             </div>
             
-            <button onClick={handleAnalyze} disabled={isAnalyzeDisabled} className="w-full bg-cyan-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-cyan-700 transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed flex justify-center items-center gap-2">
+            <button onClick={handleAnalyze} disabled={isAnalyzeDisabled} className="w-full bg-cyan-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-cyan-700 transition-colors disabled:bg-gray-400 dark:disabled:bg-gray-600 disabled:cursor-not-allowed flex justify-center items-center gap-2">
               {isLoading ? <><LoadingSpinner /> {t('buttons.analyzing')}</> : t('buttons.analyze')}
             </button>
           </div>
           
-          <div className="bg-gray-800 p-6 rounded-lg shadow-lg space-y-6">
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md border border-gray-200 dark:border-transparent space-y-6">
             <div>
-                <h2 className="text-2xl font-semibold mb-4 border-b border-gray-600 pb-2 text-gray-200">{t('analysis.title')}</h2>
-                {isLoading && <div className="flex flex-col items-center justify-center h-full text-gray-400"><LoadingSpinner /><p className="mt-4">{t('analysis.loading')}</p></div>}
-                {error && <div className="bg-red-900 border border-red-500 text-red-200 px-4 py-3 rounded-lg"><p className="font-bold">{t('error.title')}</p><p>{error}</p></div>}
+                <h2 className="text-2xl font-semibold mb-4 border-b border-gray-200 dark:border-gray-600 pb-2 text-gray-800 dark:text-gray-200">{t('analysis.title')}</h2>
+                {isLoading && <div className="flex flex-col items-center justify-center h-full text-gray-500 dark:text-gray-400"><LoadingSpinner /><p className="mt-4">{t('analysis.loading')}</p></div>}
+                {error && <div className="bg-red-100 border border-red-400 text-red-700 dark:bg-red-900 dark:border-red-500 dark:text-red-200 px-4 py-3 rounded-lg"><p className="font-bold">{t('error.title')}</p><p>{error}</p></div>}
                 {analysisResult && <RecruiterAnalysisResultDisplay result={analysisResult} />}
                 {!isLoading && !error && !analysisResult && <div className="flex items-center justify-center h-full text-gray-500">{t('analysis.placeholder')}</div>}
             </div>
 
             {analysisResult && !isLoading && (
               <>
-                <div className="border-t border-cyan-500 pt-6 space-y-4">
-                  {isGeneratingDecision && <div className="flex flex-col items-center justify-center text-gray-400 mt-4"><LoadingSpinner /><p className="mt-2">{t('buttons.generatingDecision')}</p></div>}
-                  {decisionError && <div className="mt-4 bg-red-900 border border-red-500 text-red-200 px-4 py-3 rounded-lg"><p className="font-bold">{t('error.title')}</p><p>{decisionError}</p></div>}
+                <div className="border-t border-cyan-400 dark:border-cyan-500 pt-6 space-y-4">
+                  {isGeneratingDecision && <div className="flex flex-col items-center justify-center text-gray-500 dark:text-gray-400 mt-4"><LoadingSpinner /><p className="mt-2">{t('buttons.generatingDecision')}</p></div>}
+                  {decisionError && <div className="mt-4 bg-red-100 border border-red-400 text-red-700 dark:bg-red-900 dark:border-red-500 dark:text-red-200 px-4 py-3 rounded-lg"><p className="font-bold">{t('error.title')}</p><p>{decisionError}</p></div>}
                   {preliminaryDecision ? (
                     <PreliminaryDecisionDisplay result={preliminaryDecision} />
                   ) : (
-                    <button onClick={handleGenerateDecision} disabled={isGeneratingDecision} className="w-full bg-indigo-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-indigo-700 transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed flex justify-center items-center gap-2">
+                    <button onClick={handleGenerateDecision} disabled={isGeneratingDecision} className="w-full bg-indigo-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-indigo-700 transition-colors disabled:bg-gray-400 dark:disabled:bg-gray-600 disabled:cursor-not-allowed flex justify-center items-center gap-2">
                       {isGeneratingDecision ? <><LoadingSpinner /> {t('buttons.generatingDecision')}</> : t('buttons.generateDecision')}
                     </button>
                   )}
                 </div>
 
-                <div className="border-t border-cyan-500 pt-6 space-y-4">
-                  {isRewritingResume && <div className="flex flex-col items-center justify-center text-gray-400 mt-4"><LoadingSpinner /><p className="mt-2">{t('rewrite.loading')}</p></div>}
-                  {rewriteError && <div className="mt-4 bg-red-900 border border-red-500 text-red-200 px-4 py-3 rounded-lg"><p className="font-bold">{t('error.title')}</p><p>{rewriteError}</p></div>}
+                <div className="border-t border-cyan-400 dark:border-cyan-500 pt-6 space-y-4">
+                  {isRewritingResume && <div className="flex flex-col items-center justify-center text-gray-500 dark:text-gray-400 mt-4"><LoadingSpinner /><p className="mt-2">{t('rewrite.loading')}</p></div>}
+                  {rewriteError && <div className="mt-4 bg-red-100 border border-red-400 text-red-700 dark:bg-red-900 dark:border-red-500 dark:text-red-200 px-4 py-3 rounded-lg"><p className="font-bold">{t('error.title')}</p><p>{rewriteError}</p></div>}
                   {rewrittenResume ? (
                       <RewrittenResumeDisplay result={rewrittenResume} />
                   ) : (
-                      <button onClick={handleRewriteResume} disabled={isRewritingResume} className="w-full bg-purple-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-purple-700 transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed flex justify-center items-center gap-2">
+                      <button onClick={handleRewriteResume} disabled={isRewritingResume} className="w-full bg-purple-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-purple-700 transition-colors disabled:bg-gray-400 dark:disabled:bg-gray-600 disabled:cursor-not-allowed flex justify-center items-center gap-2">
                           {isRewritingResume ? <><LoadingSpinner /> {t('buttons.rewritingResume')}</> : t('buttons.rewriteResume')}
                       </button>
                   )}
                 </div>
               
-                <div className="border-t border-cyan-500 pt-6">
-                  <h2 className="text-2xl font-semibold mb-4 text-gray-200">{t('consistency.title')}</h2>
+                <div className="border-t border-cyan-400 dark:border-cyan-500 pt-6">
+                  <h2 className="text-2xl font-semibold mb-4 text-gray-800 dark:text-gray-200">{t('consistency.title')}</h2>
                   <textarea 
                     value={interviewTranscript} 
                     onChange={e => setInterviewTranscript(e.target.value)} 
                     placeholder={t('consistency.placeholder')} 
-                    className="w-full h-32 p-3 bg-gray-700 rounded border border-gray-600 focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition mb-4" 
+                    className="w-full h-32 p-3 bg-gray-100 dark:bg-gray-700 rounded border border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition mb-4" 
                   />
                   <button 
                     onClick={handleAnalyzeConsistency} 
                     disabled={!interviewTranscript || isAnalyzingConsistency} 
-                    className="w-full bg-teal-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-teal-700 transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed flex justify-center items-center gap-2"
+                    className="w-full bg-teal-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-teal-700 transition-colors disabled:bg-gray-400 dark:disabled:bg-gray-600 disabled:cursor-not-allowed flex justify-center items-center gap-2"
                   >
                     {isAnalyzingConsistency ? <><LoadingSpinner /> {t('buttons.analyzingConsistency')}</> : t('buttons.analyzeConsistency')}
                   </button>
-                  {isAnalyzingConsistency && <div className="flex flex-col items-center justify-center text-gray-400 mt-4"><LoadingSpinner /><p className="mt-2">{t('consistency.loading')}</p></div>}
-                  {consistencyError && <div className="mt-4 bg-red-900 border border-red-500 text-red-200 px-4 py-3 rounded-lg"><p className="font-bold">{t('error.title')}</p><p>{consistencyError}</p></div>}
+                  {isAnalyzingConsistency && <div className="flex flex-col items-center justify-center text-gray-500 dark:text-gray-400 mt-4"><LoadingSpinner /><p className="mt-2">{t('consistency.loading')}</p></div>}
+                  {consistencyError && <div className="mt-4 bg-red-100 border border-red-400 text-red-700 dark:bg-red-900 dark:border-red-500 dark:text-red-200 px-4 py-3 rounded-lg"><p className="font-bold">{t('error.title')}</p><p>{consistencyError}</p></div>}
                   {consistencyResult && <ConsistencyResultDisplay result={consistencyResult} />}
                 </div>
               </>
@@ -362,9 +396,9 @@ const App: React.FC = () => {
 };
 
 const getScoreColor = (score: number) => {
-    if (score >= 80) return { text: 'text-green-400', bg: 'bg-green-500/20', border: 'border-green-500' };
-    if (score >= 60) return { text: 'text-yellow-400', bg: 'bg-yellow-500/20', border: 'border-yellow-500' };
-    return { text: 'text-red-400', bg: 'bg-red-500/20', border: 'border-red-500' };
+    if (score >= 80) return { text: 'text-green-500 dark:text-green-400', bg: 'bg-green-100 dark:bg-green-500/20', border: 'border-green-500' };
+    if (score >= 60) return { text: 'text-yellow-500 dark:text-yellow-400', bg: 'bg-yellow-100 dark:bg-yellow-500/20', border: 'border-yellow-500' };
+    return { text: 'text-red-500 dark:text-red-400', bg: 'bg-red-100 dark:bg-red-500/20', border: 'border-red-500' };
 };
 
 const getHiringDecisionStyle = (decision: string) => {
@@ -386,9 +420,9 @@ const ScoreBadge: React.FC<{ score: number }> = ({ score }) => {
 const MatchStatusBadge: React.FC<{ status: MatchStatus }> = ({ status }) => {
     const { t } = useTranslations();
     const styles = {
-        'Match': { bg: 'bg-green-500/20', text: 'text-green-300' },
-        'Partial': { bg: 'bg-yellow-500/20', text: 'text-yellow-300' },
-        'No Match': { bg: 'bg-red-500/20', text: 'text-red-400' },
+        'Match': { bg: 'bg-green-100 dark:bg-green-500/20', text: 'text-green-700 dark:text-green-300' },
+        'Partial': { bg: 'bg-yellow-100 dark:bg-yellow-500/20', text: 'text-yellow-700 dark:text-yellow-300' },
+        'No Match': { bg: 'bg-red-100 dark:bg-red-500/20', text: 'text-red-700 dark:text-red-400' },
     };
     const style = styles[status] || styles['Partial'];
     const statusKey = `status.${status.toLowerCase().replace(' ', '')}`;
@@ -411,6 +445,59 @@ const XIcon = () => (
         <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
     </svg>
 );
+
+const formatRecruiterAnalysisForDownload = (result: RecruiterAnalysisResult, t: (key: string) => string): string => {
+    let content = `${t('analysis.title')}: ${result.jobTitle}\n`;
+    content += `==================================================\n\n`;
+    content += `${t('analysis.overallFit')}: ${result.overallFitScore}%\n`;
+    content += `--------------------------------------------------\n\n`;
+    
+    content += `[ ${t('analysis.summary')} ]\n${result.summary}\n\n`;
+    content += `[ ${t('analysis.fitExplanation')} ]\n${result.fitExplanation}\n\n`;
+
+    if (result.compatibilityGaps?.length > 0) {
+        content += `[ ${t('analysis.compatibilityGaps')} ]\n`;
+        result.compatibilityGaps.forEach(gap => content += `- ${gap}\n`);
+        content += '\n';
+    }
+    
+    const formatSection = (title: string, section: RecruiterAnalysisResult['keyResponsibilitiesMatch']) => {
+        if (!section || !section.items || section.items.length === 0) return '';
+        let sectionContent = `[ ${title} (Score: ${section.score}) ]\n`;
+        section.items.forEach(item => {
+            sectionContent += `- ${item.item} [${t(`status.${item.status.toLowerCase().replace(' ', '')}`)}]\n`;
+            sectionContent += `  - ${t('decision.explanation')}: ${item.explanation}\n`;
+        });
+        return sectionContent + '\n';
+    };
+
+    content += formatSection(t('analysis.keyResponsibilities'), result.keyResponsibilitiesMatch);
+    content += formatSection(t('analysis.requiredSkills'), result.requiredSkillsMatch);
+    content += formatSection(t('analysis.niceToHaveSkills'), result.niceToHaveSkillsMatch);
+
+    if (result.companyCultureFit) {
+        content += `[ ${t('analysis.companyCulture')} (Score: ${result.companyCultureFit.score}) ]\n${result.companyCultureFit.analysis}\n\n`;
+    }
+
+    if (result.salaryAndBenefits) {
+        content += `[ ${t('analysis.salaryAndBenefits')} ]\n${result.salaryAndBenefits}\n\n`;
+    }
+
+    if (result.redFlags?.length > 0) {
+        content += `[ ${t('analysis.redFlags')} ]\n`;
+        result.redFlags.forEach(flag => content += `- ${flag}\n`);
+        content += '\n';
+    }
+
+    if (result.interviewQuestions?.length > 0) {
+        content += `[ ${t('analysis.interviewQuestions')} ]\n`;
+        result.interviewQuestions.forEach((q, i) => content += `${i + 1}. ${q}\n`);
+        content += '\n';
+    }
+
+    return content;
+};
+
 
 const RecruiterAnalysisResultDisplay: React.FC<{ result: RecruiterAnalysisResult }> = ({ result }) => {
   const { t } = useTranslations();
@@ -450,7 +537,7 @@ const RecruiterAnalysisResultDisplay: React.FC<{ result: RecruiterAnalysisResult
         {parts.map((part, index) => {
           const isKeyword = keywords.some(kw => kw.toLowerCase() === part.toLowerCase());
           return isKeyword ? (
-            <mark key={index} className="bg-yellow-400/80 text-gray-900 font-semibold px-1 py-0.5 rounded-sm">
+            <mark key={index} className="bg-yellow-300/70 dark:bg-yellow-400/80 text-gray-900 font-semibold px-1 py-0.5 rounded-sm">
               {part}
             </mark>
           ) : (
@@ -461,25 +548,36 @@ const RecruiterAnalysisResultDisplay: React.FC<{ result: RecruiterAnalysisResult
     );
   };
 
+  const handleDownload = () => {
+    const content = formatRecruiterAnalysisForDownload(result, t);
+    const filename = `${result.jobTitle.replace(/[^a-z0-9]/gi, '_')}_Analysis.txt`;
+    downloadFile(content, filename, 'text/plain;charset=utf-8');
+  };
 
   return (
-    <div className="space-y-6 text-gray-300">
-      <div className="p-4 bg-gray-700/50 rounded-lg">
-        <h3 className="text-xl font-bold text-cyan-400">{result.jobTitle}</h3>
+    <div className="space-y-6 text-gray-700 dark:text-gray-300">
+      <div className="p-4 bg-gray-100 dark:bg-gray-700/50 rounded-lg">
+        <div className="flex justify-between items-start">
+            <h3 className="text-xl font-bold text-cyan-500 dark:text-cyan-400">{result.jobTitle}</h3>
+            <button onClick={handleDownload} className="flex items-center gap-2 px-3 py-1.5 text-xs rounded bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors" title={t('buttons.download')}>
+                <DownloadIcon className="w-4 h-4" />
+                <span>{t('buttons.download')}</span>
+            </button>
+        </div>
         
         <div className="flex items-center justify-center mt-4 text-center">
             <div>
-                 <p className="text-sm text-gray-400 mb-1">{t('analysis.overallFit')}</p>
+                 <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">{t('analysis.overallFit')}</p>
                  <p className={`text-4xl font-bold ${scoreColors.text}`}>{result.overallFitScore}<span className="text-2xl">%</span></p>
             </div>
         </div>
-         <div className="flex items-center justify-center mt-4 pt-4 border-t border-gray-600">
+         <div className="flex items-center justify-center mt-4 pt-4 border-t border-gray-200 dark:border-gray-600">
             <button
                 onClick={() => setIsHighlightingEnabled(prev => !prev)}
                 className={`px-3 py-1 text-sm rounded-md transition-colors ${
                     isHighlightingEnabled
-                    ? 'bg-yellow-500 text-gray-900 hover:bg-yellow-600'
-                    : 'bg-gray-600 text-gray-200 hover:bg-gray-500'
+                    ? 'bg-yellow-400 text-gray-900 hover:bg-yellow-500'
+                    : 'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-500'
                 }`}
             >
                 {isHighlightingEnabled ? t('highlight.disable') : t('highlight.enable')}
@@ -497,7 +595,7 @@ const RecruiterAnalysisResultDisplay: React.FC<{ result: RecruiterAnalysisResult
 
       {result.compatibilityGaps && result.compatibilityGaps.length > 0 && (
         <ResultSection title={t('analysis.compatibilityGaps')}>
-            <ul className="list-disc list-inside space-y-1 text-yellow-300">
+            <ul className="list-disc list-inside space-y-1 text-yellow-600 dark:text-yellow-300">
                 {result.compatibilityGaps?.map((item, index) => <li key={index}>{item}</li>)}
             </ul>
         </ResultSection>
@@ -509,9 +607,9 @@ const RecruiterAnalysisResultDisplay: React.FC<{ result: RecruiterAnalysisResult
             <li key={index} className="flex flex-col">
               <div className="flex items-center gap-2 mb-1">
                 <MatchStatusBadge status={matchedItem.status} />
-                <span className="font-semibold text-gray-200">{matchedItem.item}</span>
+                <span className="font-semibold text-gray-800 dark:text-gray-200">{matchedItem.item}</span>
               </div>
-              <p className="pl-4 text-sm text-gray-400 border-l-2 border-gray-700 ml-2">{matchedItem.explanation}</p>
+              <p className="pl-4 text-sm text-gray-500 dark:text-gray-400 border-l-2 border-gray-200 dark:border-gray-700 ml-2">{matchedItem.explanation}</p>
             </li>
           ))}
         </ul>
@@ -523,9 +621,9 @@ const RecruiterAnalysisResultDisplay: React.FC<{ result: RecruiterAnalysisResult
             <li key={index} className="flex flex-col">
               <div className="flex items-center gap-2 mb-1">
                 <MatchStatusBadge status={matchedItem.status} />
-                <span className="font-semibold text-gray-200">{matchedItem.item}</span>
+                <span className="font-semibold text-gray-800 dark:text-gray-200">{matchedItem.item}</span>
               </div>
-              <p className="pl-4 text-sm text-gray-400 border-l-2 border-gray-700 ml-2">{matchedItem.explanation}</p>
+              <p className="pl-4 text-sm text-gray-500 dark:text-gray-400 border-l-2 border-gray-200 dark:border-gray-700 ml-2">{matchedItem.explanation}</p>
             </li>
           ))}
         </ul>
@@ -538,9 +636,9 @@ const RecruiterAnalysisResultDisplay: React.FC<{ result: RecruiterAnalysisResult
                 <li key={index} className="flex flex-col">
                   <div className="flex items-center gap-2 mb-1">
                     <MatchStatusBadge status={matchedItem.status} />
-                    <span className="font-semibold text-gray-200">{matchedItem.item}</span>
+                    <span className="font-semibold text-gray-800 dark:text-gray-200">{matchedItem.item}</span>
                   </div>
-                  <p className="pl-4 text-sm text-gray-400 border-l-2 border-gray-700 ml-2">{matchedItem.explanation}</p>
+                  <p className="pl-4 text-sm text-gray-500 dark:text-gray-400 border-l-2 border-gray-200 dark:border-gray-700 ml-2">{matchedItem.explanation}</p>
                 </li>
               ))}
             </ul>
@@ -549,7 +647,7 @@ const RecruiterAnalysisResultDisplay: React.FC<{ result: RecruiterAnalysisResult
 
       {result.redFlags && result.redFlags.length > 0 && (
           <ResultSection title={t('analysis.redFlags')}>
-            <ul className="list-disc list-inside space-y-1 text-yellow-300">
+            <ul className="list-disc list-inside space-y-1 text-yellow-600 dark:text-yellow-300">
               {result.redFlags?.map((item, index) => <li key={index}>{item}</li>)}
             </ul>
           </ResultSection>
@@ -581,7 +679,7 @@ const PreliminaryDecisionDisplay: React.FC<{ result: PreliminaryDecisionResult }
     const { t } = useTranslations();
     const isRecommended = result.decision === 'Recommended for Interview';
     return (
-        <div className="p-4 bg-gray-700/50 rounded-lg space-y-4">
+        <div className="p-4 bg-gray-100 dark:bg-gray-700/50 rounded-lg space-y-4">
             <ResultSection title={t('decision.title')}>
                 <div className="text-center mb-4">
                     <span className={`px-4 py-2 text-base font-bold rounded-full ${getHiringDecisionStyle(result.decision)}`}>
@@ -591,10 +689,10 @@ const PreliminaryDecisionDisplay: React.FC<{ result: PreliminaryDecisionResult }
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {result.pros && result.pros.length > 0 && (
                         <div>
-                             <h5 className="font-semibold text-green-400 mb-2">{t('decision.pros')}</h5>
+                             <h5 className="font-semibold text-green-600 dark:text-green-400 mb-2">{t('decision.pros')}</h5>
                             <ul className="space-y-2">
                                 {result.pros.map((item, index) => 
-                                    <li key={index} className="flex items-start text-green-300">
+                                    <li key={index} className="flex items-start text-green-700 dark:text-green-300">
                                         <CheckIcon />
                                         <span>{item}</span>
                                     </li>
@@ -604,10 +702,10 @@ const PreliminaryDecisionDisplay: React.FC<{ result: PreliminaryDecisionResult }
                     )}
                     {result.cons && result.cons.length > 0 && (
                         <div>
-                             <h5 className="font-semibold text-red-400 mb-2">{t('decision.cons')}</h5>
+                             <h5 className="font-semibold text-red-600 dark:text-red-400 mb-2">{t('decision.cons')}</h5>
                             <ul className="space-y-2">
                                 {result.cons.map((item, index) => 
-                                    <li key={index} className="flex items-start text-red-400">
+                                    <li key={index} className="flex items-start text-red-700 dark:text-red-400">
                                         <XIcon />
                                         <span>{item}</span>
                                     </li>
@@ -616,9 +714,9 @@ const PreliminaryDecisionDisplay: React.FC<{ result: PreliminaryDecisionResult }
                         </div>
                     )}
                 </div>
-                <div className="mt-4 border-t border-gray-600 pt-4">
-                     <h5 className="font-semibold text-gray-200 mb-2">{t('decision.explanation')}</h5>
-                     <p className="text-gray-300">{result.explanation}</p>
+                <div className="mt-4 border-t border-gray-200 dark:border-gray-600 pt-4">
+                     <h5 className="font-semibold text-gray-800 dark:text-gray-200 mb-2">{t('decision.explanation')}</h5>
+                     <p className="text-gray-700 dark:text-gray-300">{result.explanation}</p>
                 </div>
             </ResultSection>
         </div>
@@ -627,15 +725,62 @@ const PreliminaryDecisionDisplay: React.FC<{ result: PreliminaryDecisionResult }
 
 const RewrittenResumeDisplay: React.FC<{ result: RewrittenResumeResult }> = ({ result }) => {
     const { t } = useTranslations();
+    const handleDownload = () => {
+        downloadFile(result.rewrittenResume, 'Rewritten-Resume.md', 'text/markdown;charset=utf-8');
+    };
     return (
-        <div className="p-4 bg-gray-700/50 rounded-lg space-y-4">
-            <ResultSection title={t('rewrite.title')}>
-                <pre className="whitespace-pre-wrap font-sans text-sm bg-gray-900/50 p-4 rounded-md border border-gray-600">
-                    {result.rewrittenResume}
-                </pre>
-            </ResultSection>
+        <div className="p-4 bg-gray-100 dark:bg-gray-700/50 rounded-lg space-y-4">
+            <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-600 pb-2 mb-3">
+                <h4 className="text-lg font-semibold text-gray-800 dark:text-gray-100">{t('rewrite.title')}</h4>
+                <button onClick={handleDownload} className="flex items-center gap-2 px-3 py-1.5 text-xs rounded bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors" title={t('buttons.downloadResume')}>
+                    <DownloadIcon className="w-4 h-4" />
+                    <span>{t('buttons.downloadResume')}</span>
+                </button>
+            </div>
+            <pre className="whitespace-pre-wrap font-sans text-sm bg-gray-100/50 dark:bg-gray-900/50 p-4 rounded-md border border-gray-200 dark:border-gray-600">
+                {result.rewrittenResume}
+            </pre>
         </div>
     );
+};
+
+const formatConsistencyAnalysisForDownload = (result: ConsistencyAnalysisResult, t: (key: string) => string): string => {
+    let content = `${t('consistency.title')}\n`;
+    content += `==================================================\n\n`;
+    content += `${t('consistency.hiringDecision')}: ${result.hiringDecision}\n`;
+    content += `${t('consistency.updatedOverallFit')}: ${result.updatedOverallFitScore}%\n`;
+    content += `${t('consistency.consistencyScore')}: ${result.consistencyScore}%\n`;
+    content += `${t('consistency.recommendation')}: ${result.recommendation}\n`;
+    content += `--------------------------------------------------\n\n`;
+    
+    content += `[ ${t('consistency.summary')} ]\n${result.summary}\n\n`;
+
+    const formatList = (title: string, items: string[] | undefined) => {
+        if (!items || items.length === 0) return `[ ${title} ]\n${t('consistency.none')}\n\n`;
+        let listContent = `[ ${title} ]\n`;
+        items.forEach(item => listContent += `- ${item}\n`);
+        return listContent + '\n';
+    };
+    
+    content += formatList(t('consistency.prosForHiring'), result.prosForHiring);
+    content += formatList(t('consistency.consForHiring'), result.consForHiring);
+    
+    if (result.gapResolutions && result.gapResolutions.items.length > 0) {
+        content += `[ ${t('consistency.gapResolutions')} (Score: ${result.gapResolutions.score}) ]\n`;
+        result.gapResolutions.items.forEach(item => {
+            content += `- ${t('consistency.gapLabel')}: ${item.gap}\n`;
+            content += `  - Resolução: ${item.resolution}\n`;
+        });
+        content += '\n';
+    }
+
+    content += `[ ${t('consistency.softSkillsAnalysis')} (Score: ${result.softSkillsAnalysis.score}) ]\n${result.softSkillsAnalysis.items}\n\n`;
+    
+    content += formatList(t('consistency.inconsistencies'), result.inconsistencies?.items);
+    content += formatList(t('consistency.missingFromInterview'), result.missingFromInterview?.items);
+    content += formatList(t('consistency.newInInterview'), result.newInInterview?.items);
+
+    return content;
 };
 
 
@@ -652,29 +797,40 @@ const ConsistencyResultDisplay: React.FC<{ result: ConsistencyAnalysisResult }> 
             default: return 'bg-gray-600 text-gray-100';
         }
     };
+
+    const handleDownload = () => {
+        const content = formatConsistencyAnalysisForDownload(result, t);
+        downloadFile(content, 'Consistency-Analysis-Report.txt', 'text/plain;charset=utf-8');
+    };
     
     return (
-        <div className="space-y-6 text-gray-300 mt-4">
-             <div className="p-4 bg-gray-700/50 rounded-lg space-y-4">
+        <div className="space-y-6 text-gray-700 dark:text-gray-300 mt-4">
+             <div className="p-4 bg-gray-100 dark:bg-gray-700/50 rounded-lg space-y-4">
+                <div className="flex justify-end -mt-2 -mr-2 mb-2">
+                     <button onClick={handleDownload} className="flex items-center gap-2 px-3 py-1.5 text-xs rounded bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors" title={t('buttons.download')}>
+                        <DownloadIcon className="w-4 h-4" />
+                        <span>{t('buttons.download')}</span>
+                    </button>
+                </div>
                 <div className="grid grid-cols-2 gap-4 text-center">
                     <div>
-                        <p className="text-sm text-gray-400 mb-1">{t('consistency.updatedOverallFit')}</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">{t('consistency.updatedOverallFit')}</p>
                         <p className={`text-3xl font-bold ${updatedFitScoreColor}`}>{result.updatedOverallFitScore}<span className="text-xl">%</span></p>
                     </div>
                      <div>
-                        <p className="text-sm text-gray-400 mb-1">{t('consistency.hiringDecision')}</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">{t('consistency.hiringDecision')}</p>
                         <span className={`px-4 py-2 text-base font-bold rounded-full ${getHiringDecisionStyle(result.hiringDecision)}`}>
                             {t(result.hiringDecision === 'Recommended for Hire' ? 'consistency.recommended' : 'consistency.notRecommended')}
                         </span>
                     </div>
                 </div>
-                <div className="border-t border-gray-600 pt-4 flex justify-between items-center text-sm">
+                <div className="border-t border-gray-200 dark:border-gray-600 pt-4 flex justify-between items-center text-sm">
                     <div className="flex items-baseline gap-2">
-                        <p className="font-semibold text-gray-200">{t('consistency.consistencyScore')}:</p>
+                        <p className="font-semibold text-gray-800 dark:text-gray-200">{t('consistency.consistencyScore')}:</p>
                         <p className={`font-bold ${consistencyScoreColor}`}>{result.consistencyScore}%</p>
                     </div>
                     <div className="flex items-baseline gap-2">
-                        <p className="font-semibold text-gray-200">{t('consistency.recommendation')}:</p>
+                        <p className="font-semibold text-gray-800 dark:text-gray-200">{t('consistency.recommendation')}:</p>
                          <span className={`px-2 py-0.5 text-xs font-bold rounded-full ${getRecommendationStyle(result.recommendation)}`}>
                             {result.recommendation}
                         </span>
@@ -690,9 +846,9 @@ const ConsistencyResultDisplay: React.FC<{ result: ConsistencyAnalysisResult }> 
                 <ResultSection title={t('consistency.gapResolutions')} score={result.gapResolutions.score}>
                     <ul className="space-y-4">
                         {result.gapResolutions.items.map((item, index) => (
-                            <li key={index} className="p-3 bg-gray-700/50 rounded-lg">
-                                <p className="text-sm font-semibold text-yellow-300 mb-2">{t('consistency.gapLabel')}: <span className="font-normal">{item.gap}</span></p>
-                                <p className="text-sm text-green-300 border-l-2 border-green-500 pl-3">{item.resolution}</p>
+                            <li key={index} className="p-3 bg-gray-100 dark:bg-gray-700/50 rounded-lg">
+                                <p className="text-sm font-semibold text-yellow-600 dark:text-yellow-300 mb-2">{t('consistency.gapLabel')}: <span className="font-normal">{item.gap}</span></p>
+                                <p className="text-sm text-green-700 dark:text-green-300 border-l-2 border-green-400 dark:border-green-500 pl-3">{item.resolution}</p>
                             </li>
                         ))}
                     </ul>
@@ -704,7 +860,7 @@ const ConsistencyResultDisplay: React.FC<{ result: ConsistencyAnalysisResult }> 
                     <ResultSection title={t('consistency.prosForHiring')}>
                         <ul className="space-y-2">
                             {result.prosForHiring.map((item, index) => 
-                                <li key={index} className="flex items-start text-green-300">
+                                <li key={index} className="flex items-start text-green-700 dark:text-green-300">
                                     <CheckIcon />
                                     <span>{item}</span>
                                 </li>
@@ -717,7 +873,7 @@ const ConsistencyResultDisplay: React.FC<{ result: ConsistencyAnalysisResult }> 
                     <ResultSection title={t('consistency.consForHiring')}>
                         <ul className="space-y-2">
                             {result.consForHiring.map((item, index) => 
-                                <li key={index} className="flex items-start text-red-400">
+                                <li key={index} className="flex items-start text-red-700 dark:text-red-400">
                                     <XIcon />
                                     <span>{item}</span>
                                 </li>
@@ -733,7 +889,7 @@ const ConsistencyResultDisplay: React.FC<{ result: ConsistencyAnalysisResult }> 
             
             {result.inconsistencies && result.inconsistencies.items.length > 0 && (
                 <ResultSection title={t('consistency.inconsistencies')} score={result.inconsistencies.score}>
-                    <ul className="list-disc list-inside space-y-1 text-red-400">
+                    <ul className="list-disc list-inside space-y-1 text-red-700 dark:text-red-400">
                         {result.inconsistencies.items.map((item, index) => <li key={index}>{item}</li>)}
                     </ul>
                 </ResultSection>
@@ -741,21 +897,21 @@ const ConsistencyResultDisplay: React.FC<{ result: ConsistencyAnalysisResult }> 
 
             <ResultSection title={t('consistency.missingFromInterview')} score={result.missingFromInterview.score}>
                 {result.missingFromInterview?.items.length > 0 ? (
-                    <ul className="list-disc list-inside space-y-1 text-yellow-300">
+                    <ul className="list-disc list-inside space-y-1 text-yellow-600 dark:text-yellow-300">
                         {result.missingFromInterview?.items.map((item, index) => <li key={index}>{item}</li>)}
                     </ul>
                 ) : (
-                    <p className="text-gray-400">{t('consistency.none')}</p>
+                    <p className="text-gray-500 dark:text-gray-400">{t('consistency.none')}</p>
                 )}
             </ResultSection>
 
             <ResultSection title={t('consistency.newInInterview')} score={result.newInInterview.score}>
                  {result.newInInterview?.items.length > 0 ? (
-                    <ul className="list-disc list-inside space-y-1 text-green-400">
+                    <ul className="list-disc list-inside space-y-1 text-green-600 dark:text-green-400">
                         {result.newInInterview?.items.map((item, index) => <li key={index}>{item}</li>)}
                     </ul>
                 ) : (
-                    <p className="text-gray-400">{t('consistency.none')}</p>
+                    <p className="text-gray-500 dark:text-gray-400">{t('consistency.none')}</p>
                 )}
             </ResultSection>
         </div>
@@ -765,8 +921,8 @@ const ConsistencyResultDisplay: React.FC<{ result: ConsistencyAnalysisResult }> 
 
 const ResultSection: React.FC<{title: string; score?: number; children: React.ReactNode}> = ({ title, score, children }) => (
     <div>
-        <div className="flex items-center justify-between border-b border-gray-600 pb-2 mb-3">
-            <h4 className="text-lg font-semibold text-gray-100">{title}</h4>
+        <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-600 pb-2 mb-3">
+            <h4 className="text-lg font-semibold text-gray-800 dark:text-gray-100">{title}</h4>
             {score !== undefined && <ScoreBadge score={score} />}
         </div>
         {children}

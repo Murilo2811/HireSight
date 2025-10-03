@@ -122,3 +122,15 @@ export const parseUrlContent = async (url: string): Promise<string> => {
     // 3. Reassemble the text and return
     return cleanedLines.join('\n').trim();
 };
+
+export const downloadFile = (content: string, filename: string, mimeType: string) => {
+    const blob = new Blob([content], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+};

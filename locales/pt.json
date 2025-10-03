@@ -18,6 +18,8 @@
   "buttons.generatingDecision": "Gerando Decisão...",
   "buttons.rewriteResume": "Reescrever Currículo para a Vaga",
   "buttons.rewritingResume": "Reescrevendo...",
+  "buttons.download": "Baixar Relatório",
+  "buttons.downloadResume": "Baixar Currículo",
   "analysis.title": "Relatório da Análise",
   "analysis.loading": "A IA está analisando os documentos, por favor aguarde...",
   "error.title": "Erro",

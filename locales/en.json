@@ -18,6 +18,8 @@
   "buttons.generatingDecision": "Generating Decision...",
   "buttons.rewriteResume": "Rewrite Resume for Job",
   "buttons.rewritingResume": "Rewriting...",
+  "buttons.download": "Download Report",
+  "buttons.downloadResume": "Download Resume",
   "analysis.title": "Analysis Report",
   "analysis.loading": "The AI is analyzing the documents, please wait...",
   "error.title": "Error",

@@ -1,52 +1,44 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import type { 
-    RecruiterAnalysisResult, 
-    PreliminaryDecisionResult, 
+import {
+    RecruiterAnalysisResult,
+    PreliminaryDecisionResult,
     ConsistencyAnalysisResult,
-    RewrittenResumeResult
+    RewrittenResumeResult,
 } from '../types';
 
-// Per coding guidelines, the API key must be obtained exclusively from `process.env.API_KEY`.
-const apiKey = process.env.API_KEY;
-if (!apiKey) {
-    throw new Error("API_KEY environment variable is not set. Please ensure it is configured.");
-}
-// Fix: Initialize GoogleGenAI client with a named apiKey parameter.
-const ai = new GoogleGenAI({ apiKey });
-
-// Fix: Use the recommended model 'gemini-2.5-flash' for general text tasks.
-const MODEL_NAME = 'gemini-2.5-flash';
-
-type Input = { content: string | { data: string; mimeType: string }, format: 'text' | 'file' };
+// Gemini API client setup
+const ai = new GoogleGenAI({apiKey: process.env.API_KEY});
 
 /**
- * Helper function to convert app-specific input format to Gemini API Part format.
+ * Defines the structure for inputs passed to Gemini, supporting both raw text and file data.
  */
-const buildContentPart = (input: Input) => {
-    if (input.format === 'text' && typeof input.content === 'string') {
-        return { text: input.content };
-    }
-    if (input.format === 'file' && typeof input.content === 'object' && input.content !== null) {
-        return {
-            inlineData: {
-                data: input.content.data,
-                mimeType: input.content.mimeType,
-            },
-        };
-    }
-    throw new Error('Invalid input format provided to buildContentPart.');
+type GeminiInput = {
+    content: string | { data: string; mimeType: string };
+    format: 'text' | 'file';
 };
 
-// --- JSON Schemas for Gemini API ---
+/**
+ * Helper to build a content part for the Gemini API, handling both text and file data.
+ */
+const buildContentPart = (input: GeminiInput) => {
+    if (input.format === 'file' && typeof input.content !== 'string') {
+        // This is for file-based input, like PDFs.
+        return { inlineData: input.content };
+    }
+    // This is for text-based input.
+    return { text: input.content as string };
+};
+
+// --- Schemas for JSON output ---
 
 const matchedItemSchema = {
     type: Type.OBJECT,
     properties: {
-        item: { type: Type.STRING },
-        status: { type: Type.STRING, description: "Can be 'Match', 'Partial', or 'No Match'" },
-        explanation: { type: Type.STRING },
+        item: { type: Type.STRING, description: "The specific responsibility or skill from the job description." },
+        status: { type: Type.STRING, enum: ['Match', 'Partial', 'No Match'], description: "The match status." },
+        explanation: { type: Type.STRING, description: "A brief explanation of why this status was given, referencing the resume." },
     },
-    required: ['item', 'status', 'explanation'],
+    required: ['item', 'status', 'explanation']
 };
 
 const sectionMatchSchema = {
@@ -54,215 +46,181 @@ const sectionMatchSchema = {
     properties: {
         items: {
             type: Type.ARRAY,
-            items: matchedItemSchema,
+            items: matchedItemSchema
         },
-        score: { type: Type.NUMBER, description: "Score from 0 to 100." },
+        score: { type: Type.NUMBER, description: "A score from 0 to 100 representing the match for this section." },
     },
-    required: ['items', 'score'],
+    required: ['items', 'score']
 };
 
 const analysisWithScoreSchema = {
     type: Type.OBJECT,
     properties: {
-        analysis: { type: Type.STRING },
-        score: { type: Type.NUMBER, description: "Score from 0 to 100." },
+        analysis: { type: Type.STRING, description: "The detailed analysis text." },
+        score: { type: Type.NUMBER, description: "A score from 0 to 100 for this analysis." },
     },
-    required: ['analysis', 'score'],
+    required: ['analysis', 'score']
 };
 
 const recruiterAnalysisSchema = {
     type: Type.OBJECT,
     properties: {
-        jobTitle: { type: Type.STRING },
-        summary: { type: Type.STRING },
+        jobTitle: { type: Type.STRING, description: "The job title from the job description." },
+        summary: { type: Type.STRING, description: "A concise summary of the candidate's fit for the role." },
         keyResponsibilitiesMatch: sectionMatchSchema,
         requiredSkillsMatch: sectionMatchSchema,
         niceToHaveSkillsMatch: sectionMatchSchema,
         companyCultureFit: analysisWithScoreSchema,
-        salaryAndBenefits: { type: Type.STRING },
-        redFlags: { type: Type.ARRAY, items: { type: Type.STRING } },
-        interviewQuestions: { type: Type.ARRAY, items: { type: Type.STRING } },
-        overallFitScore: { type: Type.NUMBER, description: "Overall score from 0 to 100." },
-        fitExplanation: { type: Type.STRING },
-        compatibilityGaps: { type: Type.ARRAY, items: { type: Type.STRING } },
+        salaryAndBenefits: { type: Type.STRING, description: "Analysis of salary expectations and benefits, if mentioned." },
+        redFlags: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Any potential red flags or concerns." },
+        interviewQuestions: { type: Type.ARRAY, items: { type: Type.STRING }, description: "A list of suggested interview questions for this candidate." },
+        overallFitScore: { type: Type.NUMBER, description: "An overall fit score from 0 to 100." },
+        fitExplanation: { type: Type.STRING, description: "An explanation for the overall fit score." },
+        compatibilityGaps: { type: Type.ARRAY, items: { type: Type.STRING }, description: "A list of specific gaps between the resume and job description." },
     },
     required: [
         'jobTitle', 'summary', 'keyResponsibilitiesMatch', 'requiredSkillsMatch',
-        'niceToHaveSkillsMatch', 'companyCultureFit', 'salaryAndBenefits',
-        'redFlags', 'interviewQuestions', 'overallFitScore', 'fitExplanation', 'compatibilityGaps'
+        'niceToHaveSkillsMatch', 'companyCultureFit', 'salaryAndBenefits', 'redFlags',
+        'interviewQuestions', 'overallFitScore', 'fitExplanation', 'compatibilityGaps'
     ]
 };
 
 const preliminaryDecisionSchema = {
     type: Type.OBJECT,
     properties: {
-        decision: { type: Type.STRING, description: "Should be 'Recommended for Interview' or 'Not Recommended'" },
+        decision: { type: Type.STRING, enum: ['Recommended for Interview', 'Not Recommended'] },
         pros: { type: Type.ARRAY, items: { type: Type.STRING } },
         cons: { type: Type.ARRAY, items: { type: Type.STRING } },
-        explanation: { type: Type.STRING },
+        explanation: { type: Type.STRING }
     },
-    required: ['decision', 'pros', 'cons', 'explanation'],
+    required: ['decision', 'pros', 'cons', 'explanation']
 };
 
-const rewrittenResumeSchema = {
-    type: Type.OBJECT,
-    properties: {
-        rewrittenResume: { type: Type.STRING, description: "The full rewritten resume text, optimized for the job." },
-    },
-    required: ['rewrittenResume'],
-};
-
-const gapResolutionItemSchema = {
-    type: Type.OBJECT,
-    properties: {
-        gap: { type: Type.STRING },
-        resolution: { type: Type.STRING },
-    },
-    required: ['gap', 'resolution'],
-};
 
 const consistencySectionStringSchema = {
     type: Type.OBJECT,
     properties: {
         items: { type: Type.STRING },
-        score: { type: Type.NUMBER, description: "Score from 0 to 100." },
+        score: { type: Type.NUMBER },
     },
-    required: ['items', 'score'],
+    required: ['items', 'score']
 };
 
 const consistencySectionStringArraySchema = {
     type: Type.OBJECT,
     properties: {
         items: { type: Type.ARRAY, items: { type: Type.STRING } },
-        score: { type: Type.NUMBER, description: "Score from 0 to 100." },
+        score: { type: Type.NUMBER },
     },
-    required: ['items', 'score'],
+    required: ['items', 'score']
 };
 
-const consistencySectionGapResolutionSchema = {
+const gapResolutionItemSchema = {
+    type: Type.OBJECT,
+    properties: {
+        gap: { type: Type.STRING },
+        resolution: { type: Type.STRING }
+    },
+    required: ['gap', 'resolution']
+};
+
+const gapResolutionSectionSchema = {
     type: Type.OBJECT,
     properties: {
         items: { type: Type.ARRAY, items: gapResolutionItemSchema },
-        score: { type: Type.NUMBER, description: "Score from 0 to 100." },
+        score: { type: Type.NUMBER },
     },
-    required: ['items', 'score'],
+    required: ['items', 'score']
 };
 
 const consistencyAnalysisSchema = {
     type: Type.OBJECT,
     properties: {
-        consistencyScore: { type: Type.NUMBER, description: "Score from 0 to 100." },
+        consistencyScore: { type: Type.NUMBER },
         summary: { type: Type.STRING },
-        recommendation: { type: Type.STRING, description: "Should be 'Strong Fit', 'Partial Fit', or 'Weak Fit'" },
+        recommendation: { type: Type.STRING, enum: ['Strong Fit', 'Partial Fit', 'Weak Fit'] },
         softSkillsAnalysis: consistencySectionStringSchema,
         inconsistencies: consistencySectionStringArraySchema,
         missingFromInterview: consistencySectionStringArraySchema,
         newInInterview: consistencySectionStringArraySchema,
-        gapResolutions: consistencySectionGapResolutionSchema,
+        gapResolutions: gapResolutionSectionSchema,
         prosForHiring: { type: Type.ARRAY, items: { type: Type.STRING } },
         consForHiring: { type: Type.ARRAY, items: { type: Type.STRING } },
-        updatedOverallFitScore: { type: Type.NUMBER, description: "Score from 0 to 100." },
-        hiringDecision: { type: Type.STRING, description: "Should be 'Recommended for Hire' or 'Not Recommended'" },
+        updatedOverallFitScore: { type: Type.NUMBER },
+        hiringDecision: { type: Type.STRING, enum: ['Recommended for Hire', 'Not Recommended'] },
     },
     required: [
-        'consistencyScore', 'summary', 'recommendation', 'softSkillsAnalysis',
-        'inconsistencies', 'missingFromInterview', 'newInInterview',
-        'gapResolutions', 'prosForHiring', 'consForHiring',
+        'consistencyScore', 'summary', 'recommendation', 'softSkillsAnalysis', 'inconsistencies',
+        'missingFromInterview', 'newInInterview', 'gapResolutions', 'prosForHiring', 'consForHiring',
         'updatedOverallFitScore', 'hiringDecision'
-    ],
+    ]
 };
+
+const rewrittenResumeSchema = {
+    type: Type.OBJECT,
+    properties: {
+        rewrittenResume: { type: Type.STRING, description: "The full text of the rewritten resume." }
+    },
+    required: ['rewrittenResume']
+};
+
 
 // --- API Service Functions ---
 
-/**
- * Analyzes a resume against a job description for a recruiter.
- */
 export const analyzeForRecruiter = async (
-    jobInput: Input,
-    resumeInput: Input,
-    language: 'en' | 'pt'
+    jobInput: GeminiInput,
+    resumeInput: GeminiInput,
+    language: string
 ): Promise<RecruiterAnalysisResult> => {
-
-    const currentDate = new Date().toISOString().split('T')[0]; // Get YYYY-MM-DD
-
-    const prompt = `
-        As a senior talent acquisition specialist, your task is to conduct a thorough analysis of a candidate's resume against a job description. 
-        Provide a detailed, unbiased report in JSON format. The response must adhere strictly to the provided JSON schema.
-        
-        **Crucial Rule: The current date for this analysis is ${currentDate}. Use this date as the 'present day' for all temporal evaluations. Any employment date in the resume that starts after this date is a 'future date'. Dates before this are in the past.**
-
-        The response should be in ${language === 'pt' ? 'Portuguese' : 'English'}.
-
-        Analyze the provided job description and candidate's resume to generate the report with the following sections:
-        - jobTitle: The title of the job.
-        - summary: A brief professional summary of the candidate's fit for the role.
-        - keyResponsibilitiesMatch: Compare the candidate's experience with the key responsibilities. For each, state 'Match', 'Partial', or 'No Match', with a brief explanation and an overall score (0-100).
-        - requiredSkillsMatch: Same analysis for required skills.
-        - niceToHaveSkillsMatch: Same analysis for "nice-to-have" skills.
-        - companyCultureFit: Analyze potential culture fit based on resume language. Provide a score (0-100).
-        - salaryAndBenefits: Note any mention of salary or benefits.
-        - redFlags: Identify potential red flags (e.g., employment gaps, job hopping, **future dates**).
-        - interviewQuestions: Suggest 3-5 insightful interview questions.
-        - overallFitScore: An overall suitability score (0-100).
-        - fitExplanation: A brief explanation for the overall score.
-        - compatibilityGaps: List critical gaps between the candidate's profile and job requirements.
-    `;
 
     const jobPart = buildContentPart(jobInput);
     const resumePart = buildContentPart(resumeInput);
 
-    const contents = {
-        parts: [
-            { text: "Job Description:" },
-            jobPart,
-            { text: "Candidate Resume:" },
-            resumePart,
-            { text: "Instructions:" },
-            { text: prompt }
-        ]
-    };
+    const promptParts = [
+        { text: `You are an expert HR recruiter analyzing a resume against a job description. Your output must be in JSON and conform to the provided schema. The analysis language should be: ${language}.` },
+        { text: "Job Description:" },
+        jobPart,
+        { text: "Candidate's Resume:" },
+        resumePart,
+        { text: `
+Analyze the resume against the job description and provide a detailed analysis.
+- For each section (responsibilities, required skills, nice-to-have skills), list each item from the job description and evaluate how well the candidate's resume matches it.
+- Provide an overall fit score and a detailed explanation.
+- Identify specific compatibility gaps.
+- Suggest relevant interview questions.
+- Identify any red flags.` }
+    ];
 
     const response = await ai.models.generateContent({
-        model: MODEL_NAME,
-        contents: contents,
+        model: 'gemini-2.5-flash',
+        contents: { parts: promptParts },
         config: {
             responseMimeType: "application/json",
             responseSchema: recruiterAnalysisSchema,
         },
     });
 
-    // Fix: Per guidelines, access text output via response.text
-    const jsonText = response.text.trim();
-    try {
-        return JSON.parse(jsonText) as RecruiterAnalysisResult;
-    } catch (e) {
-        console.error("Failed to parse JSON from Gemini response for recruiter analysis:", jsonText, e);
-        throw new Error("The analysis returned an invalid format. Please try again.");
-    }
+    const result = JSON.parse(response.text.trim());
+    return result as RecruiterAnalysisResult;
 };
 
-/**
- * Generates a preliminary interview decision based on a prior analysis.
- */
 export const generatePreliminaryDecision = async (
     analysisResult: RecruiterAnalysisResult,
-    language: 'en' | 'pt'
+    language: string
 ): Promise<PreliminaryDecisionResult> => {
-
     const prompt = `
-        Based on the following detailed candidate analysis, make a preliminary decision on whether to recommend them for an interview.
-        The decision must be either 'Recommended for Interview' or 'Not Recommended'.
-        Provide a concise list of pros and cons, and a final explanation for your decision.
-        The entire response must be in JSON format, adhering to the provided schema.
-        
-        The response should be in ${language === 'pt' ? 'Portuguese' : 'English'}.
+Based on the following recruitment analysis, make a preliminary decision.
+The decision should be either "Recommended for Interview" or "Not Recommended".
+Provide a list of pros and cons, and a final explanation for your decision.
+The response language must be ${language}.
+Your output must be in JSON and conform to the provided schema.
 
-        **Candidate Analysis:**
-        ${JSON.stringify(analysisResult, null, 2)}
-    `;
+Analysis:
+${JSON.stringify(analysisResult, null, 2)}
+`;
 
     const response = await ai.models.generateContent({
-        model: MODEL_NAME,
+        model: 'gemini-2.5-flash',
         contents: prompt,
         config: {
             responseMimeType: "application/json",
@@ -270,146 +228,91 @@ export const generatePreliminaryDecision = async (
         },
     });
 
-    // Fix: Per guidelines, access text output via response.text
-    const jsonText = response.text.trim();
-    try {
-        return JSON.parse(jsonText) as PreliminaryDecisionResult;
-    } catch (e) {
-        console.error("Failed to parse JSON from Gemini response for preliminary decision:", jsonText, e);
-        throw new Error("The decision generation returned an invalid format. Please try again.");
-    }
+    const result = JSON.parse(response.text.trim());
+    return result as PreliminaryDecisionResult;
 };
 
-/**
- * Rewrites a resume to be tailored for a specific job description.
- */
-export const rewriteResumeForJob = async (
-    jobInput: Input,
-    resumeInput: Input,
-    language: 'en' | 'pt'
-): Promise<RewrittenResumeResult> => {
-
-    const prompt = `
-        You are an expert career coach and professional resume writer. Your task is to rewrite the provided candidate's resume to better align with the specific job description provided.
-
-        **ABSOLUTE CRITICAL RULE: You MUST NOT invent, add, or fabricate any information, skills, or experiences that are not explicitly present in the original resume. Your task is to rephrase, reorder, and highlight existing information, not to create new content.**
-
-        Follow these steps:
-        1.  Start with a professional summary (3-4 lines) that is directly tailored to the target job description, using keywords from it while reflecting the candidate's actual experience.
-        2.  Review the candidate's work experience. For each role, reorder the bullet points to prioritize achievements and responsibilities that are most relevant to the job description.
-        3.  Refine the language of the bullet points to be more action-oriented and results-focused (e.g., "Led a team that increased sales by 20%" instead of "Was responsible for sales").
-        4.  Ensure the skills section highlights the technologies and abilities mentioned in the job description, but only those the candidate actually possesses.
-        5.  The final output should be the full text of the rewritten resume, formatted cleanly.
-
-        The response must be in JSON format, adhering to the provided schema.
-        The response should be in ${language === 'pt' ? 'Portuguese' : 'English'}.
-    `;
-    
-    const jobPart = buildContentPart(jobInput);
-    const resumePart = buildContentPart(resumeInput);
-    
-    const contents = {
-        parts: [
-            { text: "Job Description:" },
-            jobPart,
-            { text: "Original Candidate Resume:" },
-            resumePart,
-            { text: "Instructions:" },
-            { text: prompt }
-        ]
-    };
-
-    const response = await ai.models.generateContent({
-        model: MODEL_NAME,
-        contents: contents,
-        config: {
-            responseMimeType: "application/json",
-            responseSchema: rewrittenResumeSchema,
-        },
-    });
-    
-    // Fix: Per guidelines, access text output via response.text
-    const jsonText = response.text.trim();
-    try {
-        return JSON.parse(jsonText) as RewrittenResumeResult;
-    } catch (e) {
-        console.error("Failed to parse JSON from Gemini response for resume rewrite:", jsonText, e);
-        throw new Error("The resume rewrite returned an invalid format. Please try again.");
-    }
-};
-
-
-/**
- * Analyzes interview transcript for consistency against resume and job description.
- */
 export const analyzeInterviewConsistency = async (
-    jobInput: Input,
-    resumeInput: Input,
+    jobInput: GeminiInput,
+    resumeInput: GeminiInput,
     interviewTranscript: string,
     compatibilityGaps: string[],
-    language: 'en' | 'pt'
+    language: string
 ): Promise<ConsistencyAnalysisResult> => {
-    
-    const currentDate = new Date().toISOString().split('T')[0]; // Get YYYY-MM-DD
-
-    const prompt = `
-        You are a senior hiring manager performing a final consistency check after a candidate's interview.
-        You have the original job description, the candidate's resume, a list of previously identified compatibility gaps, and the interview transcript.
-
-        **Crucial Rule: The current date for this analysis is ${currentDate}. Use this date as the 'present day' for all temporal evaluations.**
-
-        **Your analysis must cover the following points and be returned in a single JSON object conforming to the schema:**
-        - consistencyScore: (0-100) rating consistency between the resume and interview.
-        - summary: A summary of the interview's outcome and final assessment.
-        - recommendation: A fit recommendation: 'Strong Fit', 'Partial Fit', or 'Weak Fit'.
-        - softSkillsAnalysis: Analyze soft skills demonstrated in the interview, with a score (0-100).
-        - inconsistencies: List contradictions between the resume and interview. Score based on severity (higher score = better).
-        - missingFromInterview: List key skills from the resume NOT validated in the interview. Score based on what's missing (higher score = better).
-        - newInInterview: List new relevant skills that appeared only in the interview. Score this (higher score = better).
-        - gapResolutions: For each initial 'compatibilityGap', describe how the interview addressed it. Score how well gaps were resolved.
-        - prosForHiring: Final top pros for hiring.
-        - consForHiring: Final top cons or risks.
-        - updatedOverallFitScore: A final, updated fit score (0-100) after the interview.
-        - hiringDecision: Your final decision: 'Recommended for Hire' or 'Not Recommended'.
-
-        The response should be in ${language === 'pt' ? 'Portuguese' : 'English'}.
-
-        **Previously identified compatibility gaps to verify:**
-        - ${compatibilityGaps.length > 0 ? compatibilityGaps.join('\n- ') : 'None'}
-
-        **Interview Transcript to analyze:**
-        ${interviewTranscript}
-    `;
-
     const jobPart = buildContentPart(jobInput);
     const resumePart = buildContentPart(resumeInput);
 
-    const contents = {
-        parts: [
-            { text: "Job Description:" },
-            jobPart,
-            { text: "Candidate Resume:" },
-            resumePart,
-            { text: "Analysis Instructions and Context:" },
-            { text: prompt }
-        ]
-    };
+    const promptParts = [
+        { text: `You are an expert HR analyst assessing the consistency between a candidate's resume, their interview, and the job description. Your output must be in JSON and conform to the provided schema. The analysis language should be: ${language}.` },
+        { text: "Job Description:" },
+        jobPart,
+        { text: "Candidate's Resume:" },
+        resumePart,
+        { text: `Interview Transcript:\n${interviewTranscript}` },
+        { text: `Previously identified compatibility gaps:\n- ${compatibilityGaps.join('\n- ')}` },
+        { text: `
+Analyze the interview transcript in the context of the resume, job description, and pre-identified gaps.
+- Evaluate if the candidate resolved or clarified the compatibility gaps.
+- Assess overall consistency between their resume and interview answers.
+- Identify any new information or skills that emerged during the interview.
+- Identify key information from the resume that was not discussed.
+- Analyze soft skills demonstrated.
+- Provide a final hiring decision and an updated overall fit score.` }
+    ];
 
     const response = await ai.models.generateContent({
-        model: MODEL_NAME,
-        contents: contents,
+        model: 'gemini-2.5-flash',
+        contents: { parts: promptParts },
         config: {
             responseMimeType: "application/json",
             responseSchema: consistencyAnalysisSchema,
         },
     });
-    
-    // Fix: Per guidelines, access text output via response.text
-    const jsonText = response.text.trim();
-    try {
-        return JSON.parse(jsonText) as ConsistencyAnalysisResult;
-    } catch (e) {
-        console.error("Failed to parse JSON from Gemini response for consistency analysis:", jsonText, e);
-        throw new Error("The consistency analysis returned an invalid format. Please try again.");
-    }
+
+    const result = JSON.parse(response.text.trim());
+    return result as ConsistencyAnalysisResult;
+};
+
+export const rewriteResumeForJob = async (
+    jobInput: GeminiInput,
+    resumeInput: GeminiInput,
+    language: string
+): Promise<RewrittenResumeResult> => {
+    const jobPart = buildContentPart(jobInput);
+    const resumePart = buildContentPart(resumeInput);
+
+    const promptParts = [
+        { text: `You are an expert resume writer. Your task is to rewrite a resume to better align with a specific job description, without fabricating information. Maintain a professional tone. The output language should be: ${language}. Your output must be in JSON and conform to the provided schema.` },
+        { text: "Original Resume:" },
+        resumePart,
+        { text: "Target Job Description:" },
+        jobPart,
+        { text: `
+Rewrite the provided resume using **Markdown formatting**.
+The goal is to emphasize skills and experiences from the original resume that are most relevant to the job description.
+
+**Formatting Rules:**
+- Use Markdown headings for sections (e.g., '## Professional Experience', '## Skills').
+- Use bold for job titles (e.g., '**Senior Project Manager**').
+- Use italics for company names and dates (e.g., '*Some Company | Jan 2020 - Present*').
+- Use bullet points ('-') for responsibilities and achievements under each role.
+
+**Content Rules:**
+- Use keywords from the job description where appropriate and accurate.
+- Rephrase bullet points to highlight achievements and impact.
+- **CRITICAL: Do NOT add any new skills or experiences that are not present in the original resume. You must only use information provided in the original resume.**
+- The output should be the complete, rewritten resume text in a single Markdown string.`}
+    ];
+
+    const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: { parts: promptParts },
+        config: {
+            responseMimeType: "application/json",
+            responseSchema: rewrittenResumeSchema,
+        },
+    });
+
+    const result = JSON.parse(response.text.trim());
+    return result as RewrittenResumeResult;
 };
