@@ -118,10 +118,11 @@ const consistencySectionStringArraySchema = {
 const gapResolutionItemSchema = {
     type: Type.OBJECT,
     properties: {
-        gap: { type: Type.STRING },
-        resolution: { type: Type.STRING }
+        gap: { type: Type.STRING, description: "The specific compatibility gap identified before the interview." },
+        resolution: { type: Type.STRING, description: "The candidate's response or clarification from the interview transcript that addresses this gap. If the gap was not addressed, explain why." },
+        isResolved: { type: Type.BOOLEAN, description: "Set to true if the candidate's response satisfactorily resolves the gap. Set to false if the response is insufficient, evasive, or if the gap was not addressed at all." }
     },
-    required: ['gap', 'resolution']
+    required: ['gap', 'resolution', 'isResolved']
 };
 
 const gapResolutionSectionSchema = {
@@ -252,7 +253,7 @@ export const analyzeInterviewConsistency = async (
         { text: `Previously identified compatibility gaps:\n- ${compatibilityGaps.join('\n- ')}` },
         { text: `
 Analyze the interview transcript in the context of the resume, job description, and pre-identified gaps.
-- Evaluate if the candidate resolved or clarified the compatibility gaps.
+- For each compatibility gap, determine if the candidate's interview responses resolved it. The 'resolution' should quote or summarize the relevant part of the interview. The 'isResolved' flag must be set to 'true' only if the gap is fully and satisfactorily addressed. If not, set it to 'false' and explain why in the 'resolution' text.
 - Assess overall consistency between their resume and interview answers.
 - Identify any new information or skills that emerged during the interview.
 - Identify key information from the resume that was not discussed.

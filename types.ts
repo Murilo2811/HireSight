@@ -46,6 +46,7 @@ export type ConsistencySection<T> = {
 export type GapResolutionItem = {
     gap: string;
     resolution: string;
+    isResolved: boolean;
 };
 
 export type ConsistencyAnalysisResult = {

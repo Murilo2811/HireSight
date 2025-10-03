@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useTranslations } from './contexts/LanguageContext';
 import { analyzeForRecruiter, analyzeInterviewConsistency, generatePreliminaryDecision, rewriteResumeForJob } from './services/geminiService';
@@ -848,7 +847,13 @@ const ConsistencyResultDisplay: React.FC<{ result: ConsistencyAnalysisResult }> 
                         {result.gapResolutions.items.map((item, index) => (
                             <li key={index} className="p-3 bg-gray-100 dark:bg-gray-700/50 rounded-lg">
                                 <p className="text-sm font-semibold text-yellow-600 dark:text-yellow-300 mb-2">{t('consistency.gapLabel')}: <span className="font-normal">{item.gap}</span></p>
-                                <p className="text-sm text-green-700 dark:text-green-300 border-l-2 border-green-400 dark:border-green-500 pl-3">{item.resolution}</p>
+                                <p className={`text-sm pl-3 border-l-2 ${
+                                    item.isResolved
+                                    ? 'text-green-700 dark:text-green-300 border-green-400 dark:border-green-500'
+                                    : 'text-red-700 dark:text-red-400 border-red-400 dark:border-red-500'
+                                }`}>
+                                    {item.resolution}
+                                </p>
                             </li>
                         ))}
                     </ul>
