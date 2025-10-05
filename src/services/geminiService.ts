@@ -6,10 +6,8 @@ import {
     RewrittenResumeResult,
 } from '../types';
 
-const API_KEY = 'AIzaSyCJXUcyHrm7atXwKYB0LgsG4aIDz5FjVd0';
-
 // Gemini API client setup
-const ai = new GoogleGenAI({apiKey: API_KEY});
+const ai = new GoogleGenAI({apiKey: process.env.API_KEY});
 
 /**
  * Defines the structure for inputs passed to Gemini, supporting both raw text and file data.
