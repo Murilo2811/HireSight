@@ -38,6 +38,7 @@ export const parseDocumentFile = async (file: File): Promise<{ content: string |
 };
 
 export const parseUrlContent = async (url: string): Promise<string> => {
+    // Usando um proxy CORS para buscar conteúdo de outras origens
     const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
     
     const response = await fetch(proxyUrl);
@@ -59,25 +60,25 @@ export const parseUrlContent = async (url: string): Promise<string> => {
         throw new Error('Could not extract main content using Readability.');
     }
 
-    // Start of cleanup logic
+    // Lógica de limpeza do texto extraído
     let cleanedText = article.textContent;
 
-    // 1. Normalize whitespace and newlines
+    // 1. Normaliza espaços em branco e quebras de linha
     cleanedText = cleanedText
-        .replace(/\t/g, ' ') // Replace tabs with spaces
-        .replace(/ +/g, ' ') // Collapse multiple spaces into one
-        .replace(/\n{3,}/g, '\n\n'); // Collapse 3+ newlines into 2
+        .replace(/\t/g, ' ') // Substitui tabs por espaços
+        .replace(/ +/g, ' ') // Reduz múltiplos espaços a um só
+        .replace(/\n{3,}/g, '\n\n'); // Reduz 3+ quebras de linha para 2
 
-    // 2. Filter out common boilerplate lines
+    // 2. Filtra linhas comuns de rodapés e cabeçalhos (boilerplate)
     const lines = cleanedText.split('\n');
     const cleanedLines: string[] = [];
     const boilerplatePatterns = [
         'share this job', 'apply now', 'report this job', 'similar jobs',
         'privacy policy', 'terms of service', 'cookie settings', 'all rights reserved',
         'back to top', 'view all jobs', 'powered by', 'log in', 'sign up',
-        /©\s*\d{4}/i, // Copyright symbol + year
-        /^voltar$/, // "Back" in portuguese
-        /^compartilhar vaga$/ // "Share job" in portuguese
+        /©\s*\d{4}/i, // Símbolo de Copyright + ano
+        /^voltar$/, 
+        /^compartilhar vaga$/
     ];
 
     const boilerplateRegex = new RegExp(boilerplatePatterns.map(p => typeof p === 'string' ? p.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&') : p.source).join('|'), 'i');
@@ -85,7 +86,7 @@ export const parseUrlContent = async (url: string): Promise<string> => {
     for (const line of lines) {
         const trimmedLine = line.trim();
         
-        // Skip empty lines, short lines (likely noise), and lines matching boilerplate
+        // Pula linhas vazias, muito curtas ou que correspondem a padrões de boilerplate
         if (trimmedLine === '' || trimmedLine.length < 5 || boilerplateRegex.test(trimmedLine)) {
             continue;
         }
@@ -93,7 +94,7 @@ export const parseUrlContent = async (url: string): Promise<string> => {
         cleanedLines.push(trimmedLine);
     }
 
-    // 3. Reassemble the text and return
+    // 3. Remonta o texto e retorna
     return cleanedLines.join('\n').trim();
 };
 

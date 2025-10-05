@@ -4,7 +4,7 @@ import { analyzeForRecruiter, analyzeInterviewConsistency, generatePreliminaryDe
 import { parseDocumentFile, parseUrlContent, downloadFile } from './utils/parsers';
 import { RecruiterAnalysisResult, ConsistencyAnalysisResult, MatchStatus, PreliminaryDecisionResult, RewrittenResumeResult } from './types';
 import LoadingSpinner from './components/LoadingSpinner';
-import { FileTextIcon, GlobeIcon, UploadIcon, DownloadIcon, SunIcon, MoonIcon } from './components/icons';
+import { FileTextIcon, GlobeIcon, UploadIcon, DownloadIcon, SunIcon, MoonIcon, ChevronDownIcon } from './components/icons';
 
 type JobInputType = 'text' | 'url' | 'file';
 type ResumeInputType = 'text' | 'file';
@@ -497,6 +497,32 @@ const formatRecruiterAnalysisForDownload = (result: RecruiterAnalysisResult, t: 
     return content;
 };
 
+const MatchedItemDisplay: React.FC<{ item: { item: string; status: MatchStatus; explanation: string } }> = ({ item }) => {
+    const [isOpen, setIsOpen] = useState(false);
+
+    return (
+        <li className="flex flex-col border-b border-gray-200 dark:border-gray-700 last:border-b-0">
+            <button
+                onClick={() => setIsOpen(!isOpen)}
+                className="flex items-center justify-between w-full py-3 px-1 text-left"
+                aria-expanded={isOpen}
+            >
+                <div className="flex items-center gap-2 flex-1">
+                    <MatchStatusBadge status={item.status} />
+                    <span className="font-semibold text-gray-800 dark:text-gray-200">{item.item}</span>
+                </div>
+                <ChevronDownIcon className={`w-5 h-5 text-gray-400 dark:text-gray-500 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+            </button>
+            {isOpen && (
+                <div className="pb-3 px-1">
+                    <p className="pl-4 text-sm text-gray-500 dark:text-gray-400 border-l-2 border-gray-200 dark:border-gray-700 ml-2">
+                        {item.explanation}
+                    </p>
+                </div>
+            )}
+        </li>
+    );
+};
 
 const RecruiterAnalysisResultDisplay: React.FC<{ result: RecruiterAnalysisResult }> = ({ result }) => {
   const { t } = useTranslations();
@@ -601,44 +627,26 @@ const RecruiterAnalysisResultDisplay: React.FC<{ result: RecruiterAnalysisResult
       )}
 
       <ResultSection title={t('analysis.keyResponsibilities')} score={result.keyResponsibilitiesMatch?.score}>
-        <ul className="space-y-4">
+        <ul className="space-y-0">
           {result.keyResponsibilitiesMatch?.items.map((matchedItem, index) => (
-            <li key={index} className="flex flex-col">
-              <div className="flex items-center gap-2 mb-1">
-                <MatchStatusBadge status={matchedItem.status} />
-                <span className="font-semibold text-gray-800 dark:text-gray-200">{matchedItem.item}</span>
-              </div>
-              <p className="pl-4 text-sm text-gray-500 dark:text-gray-400 border-l-2 border-gray-200 dark:border-gray-700 ml-2">{matchedItem.explanation}</p>
-            </li>
+            <MatchedItemDisplay key={index} item={matchedItem} />
           ))}
         </ul>
       </ResultSection>
 
       <ResultSection title={t('analysis.requiredSkills')} score={result.requiredSkillsMatch?.score}>
-        <ul className="space-y-4">
+        <ul className="space-y-0">
           {result.requiredSkillsMatch?.items.map((matchedItem, index) => (
-            <li key={index} className="flex flex-col">
-              <div className="flex items-center gap-2 mb-1">
-                <MatchStatusBadge status={matchedItem.status} />
-                <span className="font-semibold text-gray-800 dark:text-gray-200">{matchedItem.item}</span>
-              </div>
-              <p className="pl-4 text-sm text-gray-500 dark:text-gray-400 border-l-2 border-gray-200 dark:border-gray-700 ml-2">{matchedItem.explanation}</p>
-            </li>
+            <MatchedItemDisplay key={index} item={matchedItem} />
           ))}
         </ul>
       </ResultSection>
 
       {result.niceToHaveSkillsMatch?.items && result.niceToHaveSkillsMatch.items.length > 0 && (
         <ResultSection title={t('analysis.niceToHaveSkills')} score={result.niceToHaveSkillsMatch?.score}>
-            <ul className="space-y-4">
+            <ul className="space-y-0">
               {result.niceToHaveSkillsMatch?.items.map((matchedItem, index) => (
-                <li key={index} className="flex flex-col">
-                  <div className="flex items-center gap-2 mb-1">
-                    <MatchStatusBadge status={matchedItem.status} />
-                    <span className="font-semibold text-gray-800 dark:text-gray-200">{matchedItem.item}</span>
-                  </div>
-                  <p className="pl-4 text-sm text-gray-500 dark:text-gray-400 border-l-2 border-gray-200 dark:border-gray-700 ml-2">{matchedItem.explanation}</p>
-                </li>
+                <MatchedItemDisplay key={index} item={matchedItem} />
               ))}
             </ul>
         </ResultSection>
