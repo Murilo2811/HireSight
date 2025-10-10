@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useTranslations } from '../../contexts/LanguageContext';
 import {
   RecruiterAnalysisResult,
@@ -8,13 +8,12 @@ import {
   MatchStatus,
   MatchedItem,
 } from '../../types';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/Card';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 import { Progress } from '../ui/Progress';
-import { Textarea } from '../ui/Textarea';
-import { AwardIcon, TrendingUpIcon, DownloadIcon, CheckCircle2Icon, XCircleIcon, AlertCircleIcon, FileTextIcon } from '../icons';
-import { parseDocumentFile, parseUrlContent, downloadFile } from '../../utils/parsers'; // Assumindo que o parser está em utils
+import { AwardIcon, TrendingUpIcon, DownloadIcon, CheckCircle2Icon, XCircleIcon, FileTextIcon } from '../icons';
+import { downloadFile } from '../../utils/parsers';
 
 interface ResultsSectionProps {
   analysisResult: RecruiterAnalysisResult;
@@ -27,6 +26,47 @@ interface ResultsSectionProps {
   isLoading: boolean;
   activeAnalysis: string | null;
 }
+
+// Helper component for section titles
+const ResultSection: React.FC<{ title: string; score?: number; children: React.ReactNode }> = ({ title, score, children }) => (
+    <div className="py-4 first:pt-0 last:pb-0">
+        <div className="flex items-center justify-between mb-3">
+            <h4 className="text-lg font-semibold">{title}</h4>
+            {score !== undefined && <Badge variant="secondary">{score}%</Badge>}
+        </div>
+        <div className="text-sm">{children}</div>
+    </div>
+);
+
+// Helper component for matched items
+const MatchedItemsList: React.FC<{ items: MatchedItem[] }> = ({ items }) => {
+    const { t } = useTranslations();
+    
+    const MatchStatusBadge: React.FC<{ status: MatchStatus }> = ({ status }) => {
+        const variants: {[key in MatchStatus]: 'success' | 'warning' | 'danger'} = {
+            'Match': 'success',
+            'Partial': 'warning',
+            'No Match': 'danger',
+        };
+        const statusKey = `status.${status.toLowerCase().replace(' ', '')}`;
+        return <Badge variant={variants[status]}>{t(statusKey)}</Badge>
+    };
+
+    return (
+        <ul className="space-y-4">
+            {items.map((item, index) => (
+                <li key={index} className="flex flex-col">
+                    <div className="flex items-center gap-2 mb-1">
+                        <MatchStatusBadge status={item.status} />
+                        <span className="font-medium text-foreground">{item.item}</span>
+                    </div>
+                    <p className="pl-4 text-sm text-muted-foreground border-l-2 border-border ml-2">{item.explanation}</p>
+                </li>
+            ))}
+        </ul>
+    );
+};
+
 
 const ResultsSection: React.FC<ResultsSectionProps> = ({
   analysisResult,
@@ -41,8 +81,8 @@ const ResultsSection: React.FC<ResultsSectionProps> = ({
 }) => {
   const { t } = useTranslations();
   
-  // Apenas para a UI, os dados reais viriam do InputSection original
-  // Esta é uma simplificação para passar os dados para as funções de re-análise
+  // This is a simplification for the demo to pass data to re-analysis functions.
+  // In a real app, this data would be sourced from the state managed by InputSection.
   const dummyInputs = {
       jobInput: { content: 'dummy job', format: 'text' as const },
       resumeInput: { content: 'dummy resume', format: 'text' as const },
@@ -60,16 +100,6 @@ const ResultsSection: React.FC<ResultsSectionProps> = ({
     if (score >= 60) return t('results.score.medium');
     return t('results.score.low');
   }
-
-  const MatchStatusBadge: React.FC<{ status: MatchStatus }> = ({ status }) => {
-    const variants: {[key in MatchStatus]: 'success' | 'warning' | 'danger'} = {
-        'Match': 'success',
-        'Partial': 'warning',
-        'No Match': 'danger',
-    };
-    const statusKey = `status.${status.toLowerCase().replace(' ', '')}`;
-    return <Badge variant={variants[status]}>{t(statusKey)}</Badge>
-  };
   
   const handleDownloadResume = () => {
     if(rewrittenResume) {
@@ -126,7 +156,7 @@ const ResultsSection: React.FC<ResultsSectionProps> = ({
              <Card>
                 <CardHeader><CardTitle>{t('decision.title')}</CardTitle></CardHeader>
                 <CardContent>
-                    <Badge variant={preliminaryDecision.decision === 'Recommended for Interview' ? 'success' : 'danger'}>{preliminaryDecision.decision}</Badge>
+                    <Badge variant={preliminaryDecision.decision === 'Recommended for Interview' ? 'success' : 'danger'}>{preliminaryDecision.decision === 'Recommended for Interview' ? t('decision.recommended') : t('decision.notRecommended')}</Badge>
                     <p className="mt-4 text-muted-foreground">{preliminaryDecision.explanation}</p>
                     <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
@@ -175,64 +205,65 @@ const ResultsSection: React.FC<ResultsSectionProps> = ({
             </Card>
         )}
 
+        {/* DETAILED ANALYSIS REPORT */}
+        <Card>
+          <CardHeader>
+              <CardTitle>{t('analysis.title')}</CardTitle>
+          </CardHeader>
+          <CardContent className="divide-y divide-border">
+              <ResultSection title={t('analysis.fitExplanation')}>
+                  <p className="text-muted-foreground">{analysisResult.fitExplanation}</p>
+              </ResultSection>
 
-        {/* Skills & Red Flags */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center justify-between">
-                        {t('analysis.requiredSkills')}
-                        <Badge variant="success">{analysisResult.requiredSkillsMatch.score}%</Badge>
-                    </CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <ul className="space-y-2">
-                        {analysisResult.requiredSkillsMatch.items.slice(0, 5).map((item, i) => 
-                        <li key={i} className="flex items-start gap-2"><CheckCircle2Icon className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" /><span>{item.item}</span></li>)}
-                    </ul>
-                </CardContent>
-            </Card>
-             <Card>
-                <CardHeader><CardTitle className="flex items-center text-destructive"><AlertCircleIcon className="mr-2 h-6 w-6"/>{t('analysis.redFlags')}</CardTitle></CardHeader>
-                <CardContent>
-                    {analysisResult.redFlags.length > 0 ? (
-                        <ul className="space-y-2">
-                            {analysisResult.redFlags.slice(0, 5).map((flag, i) => 
-                            <li key={i} className="flex items-start gap-2"><XCircleIcon className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" /><span>{flag}</span></li>)}
-                        </ul>
-                    ) : (
-                        <p className="text-muted-foreground">{t('consistency.none')}</p>
-                    )}
-                </CardContent>
-            </Card>
-        </div>
-        
-        {/* Compatibility Gaps */}
-        {analysisResult.compatibilityGaps.length > 0 && (
-            <Card>
-                <CardHeader><CardTitle>{t('analysis.compatibilityGaps')}</CardTitle></CardHeader>
-                <CardContent>
-                    <ul className="space-y-2 list-decimal list-inside">
-                        {analysisResult.compatibilityGaps.map((gap, i) => <li key={i}>{gap}</li>)}
-                    </ul>
-                </CardContent>
-            </Card>
-        )}
-        
-         {/* Interview Questions */}
-        {analysisResult.interviewQuestions.length > 0 && (
-            <Card>
-                <CardHeader><CardTitle>{t('analysis.interviewQuestions')}</CardTitle></CardHeader>
-                <CardContent className="space-y-3">
-                    {analysisResult.interviewQuestions.map((q, i) => 
-                        <div key={i} className="bg-muted/50 p-3 rounded-md text-sm">
-                            <span className="font-semibold mr-2">{i + 1}.</span>{q}
-                        </div>
-                    )}
-                </CardContent>
-            </Card>
-        )}
+              <ResultSection title={t('analysis.compatibilityGaps')}>
+                  {analysisResult.compatibilityGaps.length > 0 ? (
+                      <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                          {analysisResult.compatibilityGaps.map((gap, i) => <li key={i}>{gap}</li>)}
+                      </ul>
+                  ) : <p className="text-muted-foreground">{t('consistency.none')}</p>}
+              </ResultSection>
 
+              <ResultSection title={t('analysis.keyResponsibilities')} score={analysisResult.keyResponsibilitiesMatch.score}>
+                  <MatchedItemsList items={analysisResult.keyResponsibilitiesMatch.items} />
+              </ResultSection>
+
+              <ResultSection title={t('analysis.requiredSkills')} score={analysisResult.requiredSkillsMatch.score}>
+                  <MatchedItemsList items={analysisResult.requiredSkillsMatch.items} />
+              </ResultSection>
+
+              {analysisResult.niceToHaveSkillsMatch?.items?.length > 0 && (
+                  <ResultSection title={t('analysis.niceToHaveSkills')} score={analysisResult.niceToHaveSkillsMatch.score}>
+                      <MatchedItemsList items={analysisResult.niceToHaveSkillsMatch.items} />
+                  </ResultSection>
+              )}
+
+              {analysisResult.companyCultureFit?.analysis && (
+                  <ResultSection title={t('analysis.companyCulture')} score={analysisResult.companyCultureFit.score}>
+                      <p className="text-muted-foreground">{analysisResult.companyCultureFit.analysis}</p>
+                  </ResultSection>
+              )}
+
+              {analysisResult.salaryAndBenefits && (
+                   <ResultSection title={t('analysis.salaryAndBenefits')}>
+                      <p className="text-muted-foreground">{analysisResult.salaryAndBenefits}</p>
+                  </ResultSection>
+              )}
+
+              <ResultSection title={t('analysis.redFlags')}>
+                  {analysisResult.redFlags.length > 0 ? (
+                      <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                          {analysisResult.redFlags.map((flag, i) => <li key={i}>{flag}</li>)}
+                      </ul>
+                  ) : <p className="text-muted-foreground">{t('consistency.none')}</p>}
+              </ResultSection>
+
+              <ResultSection title={t('analysis.interviewQuestions')}>
+                  <ol className="list-decimal list-inside space-y-2 text-muted-foreground">
+                      {analysisResult.interviewQuestions.map((q, i) => <li key={i}>{q}</li>)}
+                  </ol>
+              </ResultSection>
+          </CardContent>
+        </Card>
       </div>
     </section>
   );
