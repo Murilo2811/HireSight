@@ -118,11 +118,16 @@ export const consistencyAnalysisSchema = {
         consForHiring: { type: Type.ARRAY, items: { type: Type.STRING } },
         updatedOverallFitScore: { type: Type.NUMBER },
         hiringDecision: { type: Type.STRING, enum: ['Recommended for Hire', 'Not Recommended'] },
+        preliminaryHiringDecision: { 
+            type: Type.STRING, 
+            description: "A preliminary hiring verdict based on the interview analysis, before making a final conclusion. This helps gauge the immediate impression from the interview.",
+            enum: ['Likely Hire', 'Unlikely Hire', 'More Information Needed'] 
+        },
     },
     required: [
         'consistencyScore', 'summary', 'recommendation', 'softSkillsAnalysis', 'inconsistencies',
         'missingFromInterview', 'newInInterview', 'gapResolutions', 'prosForHiring', 'consForHiring',
-        'updatedOverallFitScore', 'hiringDecision'
+        'updatedOverallFitScore', 'hiringDecision', 'preliminaryHiringDecision'
     ]
 };
 

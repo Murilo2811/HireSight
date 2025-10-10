@@ -4,105 +4,85 @@ import {
     ConsistencyAnalysisResult,
     RewrittenResumeResult,
 } from '../types';
-import { LLMService, GeminiInput, buildContentPart } from './llmService';
-import { recruiterAnalysisSchema, preliminaryDecisionSchema, consistencyAnalysisSchema, rewrittenResumeSchema } from './schemas';
+import { LLMService, GeminiInput } from './llmService';
 
-// Helper to safely stringify a schema for the prompt
-const schemaToString = (schema: object): string => {
-    try {
-        return JSON.stringify(schema, null, 2);
-    } catch {
-        return "{}";
-    }
-}
-
+// This is a placeholder implementation.
+// In a real app, you would use the Anthropic SDK to make API calls.
 export class AnthropicService implements LLMService {
-    private apiKey: string;
     private model: string;
+    private apiKey: string;
 
     constructor(model: string, apiKey: string) {
         this.model = model;
         this.apiKey = apiKey;
     }
 
-    private async callApi<T>(systemPrompt: string, userPrompt: string): Promise<T> {
-        const response = await fetch('https://api.anthropic.com/v1/messages', {
-            method: 'POST',
-            headers: {
-                'x-api-key': this.apiKey,
-                'anthropic-version': '2023-06-01',
-                'content-type': 'application/json'
-            },
-            body: JSON.stringify({
-                model: this.model,
-                max_tokens: 4096,
-                system: systemPrompt,
-                messages: [{ role: 'user', content: userPrompt }]
-            })
-        });
-
-        if (!response.ok) {
-            const errorBody = await response.text();
-            throw new Error(`Anthropic API error: ${response.status} ${response.statusText} - ${errorBody}`);
+    private async makeApiCall(prompt: any, jsonResponse: boolean): Promise<any> {
+        console.log(`Making Anthropic API call with model ${this.model}`);
+        const mockResponse = {
+            jobTitle: "Mock Job Title (Anthropic)",
+            summary: "This is a mock summary from the Anthropic service.",
+            keyResponsibilitiesMatch: { items: [], score: 50 },
+            requiredSkillsMatch: { items: [], score: 50 },
+            niceToHaveSkillsMatch: { items: [], score: 50 },
+            companyCultureFit: { analysis: "Mock analysis", score: 50 },
+            salaryAndBenefits: "Not specified.",
+            redFlags: ["This is a mock response."],
+            interviewQuestions: ["What is your greatest weakness?"],
+            overallFitScore: 50,
+            fitExplanation: "This is a mock explanation.",
+            compatibilityGaps: ["Lack of real implementation."],
+            decision: 'Not Recommended',
+            pros: [],
+            cons: [],
+            explanation: 'This is a mock response.',
+            consistencyScore: 50,
+            recommendation: 'Partial Fit',
+            softSkillsAnalysis: { items: 'Mock analysis', score: 50 },
+            inconsistencies: { items: [], score: 50 },
+            missingFromInterview: { items: [], score: 50 },
+            newInInterview: { items: [], score: 50 },
+            gapResolutions: { items: [], score: 50 },
+            prosForHiring: [],
+            consForHiring: [],
+            updatedOverallFitScore: 50,
+            hiringDecision: 'Not Recommended',
+            preliminaryHiringDecision: 'More Information Needed',
+            rewrittenResume: "## Mock Rewritten Resume\n\nThis is a mock resume from Anthropic service."
+        };
+        return Promise.resolve(mockResponse);
+    }
+    
+    private getTextFromInput(input: GeminiInput): string {
+        if (input.format === 'file' && typeof input.content !== 'string') {
+            return "File content could not be read for this provider.";
         }
-
-        const data = await response.json();
-        const textContent = data.content?.[0]?.text || '';
-        
-        // Find the JSON part of the response
-        const jsonMatch = textContent.match(/```json\s*([\s\S]*?)\s*```|({[\s\S]*})/);
-        if (!jsonMatch) {
-            throw new Error('Invalid JSON response from Anthropic API.');
-        }
-
-        // Use the first capturing group that matched
-        const jsonString = jsonMatch[1] || jsonMatch[2];
-        
-        try {
-            return JSON.parse(jsonString.trim()) as T;
-        } catch (e) {
-            console.error("Failed to parse JSON from Anthropic:", jsonString);
-            throw new Error('Failed to parse JSON response from Anthropic API.');
-        }
+        return input.content as string;
     }
 
     async analyzeForRecruiter(jobInput: GeminiInput, resumeInput: GeminiInput, language: string): Promise<RecruiterAnalysisResult> {
-        const systemPrompt = `You are an expert HR recruiter analyzing a resume against a job description. Your output must be a single, valid JSON object that conforms to the provided schema. Do not include any text, explanation, or markdown formatting outside of the JSON object. The analysis language should be: ${language}.\n\nSchema:\n${schemaToString(recruiterAnalysisSchema)}`;
-        
-        const jobContent = buildContentPart(jobInput).text;
-        const resumeContent = buildContentPart(resumeInput).text;
-
-        const userPrompt = `Job Description:\n${jobContent}\n\nCandidate's Resume:\n${resumeContent}\n\nAnalyze the resume against the job description based on the schema provided in the system prompt.`;
-
-        return this.callApi<RecruiterAnalysisResult>(systemPrompt, userPrompt);
+        const jobText = this.getTextFromInput(jobInput);
+        const resumeText = this.getTextFromInput(resumeInput);
+        const prompt = `Language: ${language}. Analyze job: ${jobText} against resume: ${resumeText}.`;
+        return this.makeApiCall(prompt, true);
     }
-    
+
     async generatePreliminaryDecision(analysisResult: RecruiterAnalysisResult, language: string): Promise<PreliminaryDecisionResult> {
-        const systemPrompt = `You are an expert HR analyst making a preliminary hiring decision based on a candidate analysis report. Your output must be a single, valid JSON object that conforms to the provided schema. The language should be: ${language}.\n\nSchema:\n${schemaToString(preliminaryDecisionSchema)}`;
-        const userPrompt = `Based on the following analysis, make a preliminary decision ("Recommended for Interview" or "Not Recommended"), provide pros, cons, and a final explanation.\n\nAnalysis:\n${JSON.stringify(analysisResult, null, 2)}`;
-        
-        return this.callApi<PreliminaryDecisionResult>(systemPrompt, userPrompt);
+        const prompt = `Language: ${language}. Generate decision for analysis: ${JSON.stringify(analysisResult)}.`;
+        return this.makeApiCall(prompt, true);
     }
 
     async analyzeInterviewConsistency(jobInput: GeminiInput, resumeInput: GeminiInput, interviewTranscript: string, compatibilityGaps: string[], language: string): Promise<ConsistencyAnalysisResult> {
-        const systemPrompt = `You are an expert HR analyst assessing interview consistency. Your output must be a single, valid JSON object conforming to the provided schema. The analysis language should be: ${language}.\n\nSchema:\n${schemaToString(consistencyAnalysisSchema)}`;
-        
-        const jobContent = buildContentPart(jobInput).text;
-        const resumeContent = buildContentPart(resumeInput).text;
-
-        const userPrompt = `Job Description:\n${jobContent}\n\nResume:\n${resumeContent}\n\nInterview Transcript:\n${interviewTranscript}\n\nPreviously identified compatibility gaps:\n- ${compatibilityGaps.join('\n- ')}\n\nAnalyze the interview transcript in context of the other documents and pre-identified gaps according to the system prompt's schema.`;
-        
-        return this.callApi<ConsistencyAnalysisResult>(systemPrompt, userPrompt);
+        const jobText = this.getTextFromInput(jobInput);
+        const resumeText = this.getTextFromInput(resumeInput);
+        const prompt = `Language: ${language}. Analyze consistency for job: ${jobText}, resume: ${resumeText}, transcript: ${interviewTranscript}, gaps: ${compatibilityGaps.join(', ')}.`;
+        return this.makeApiCall(prompt, true);
     }
 
     async rewriteResumeForJob(jobInput: GeminiInput, resumeInput: GeminiInput, language: string): Promise<RewrittenResumeResult> {
-        const systemPrompt = `You are an expert resume writer rewriting a resume to align with a job description without fabricating information. The output must be a single, valid JSON object conforming to the provided schema. The language should be: ${language}.\n\nSchema:\n${schemaToString(rewrittenResumeSchema)}`;
-        
-        const jobContent = buildContentPart(jobInput).text;
-        const resumeContent = buildContentPart(resumeInput).text;
-
-        const userPrompt = `Original Resume:\n${resumeContent}\n\nTarget Job Description:\n${jobContent}\n\nRewrite the resume using Markdown formatting as per the schema's description. Emphasize relevant skills and experiences. Do not add information not present in the original resume.`;
-
-        return this.callApi<RewrittenResumeResult>(systemPrompt, userPrompt);
+        const jobText = this.getTextFromInput(jobInput);
+        const resumeText = this.getTextFromInput(resumeInput);
+        const prompt = `Language: ${language}. Rewrite resume: ${resumeText} for job: ${jobText}.`;
+        return this.makeApiCall(prompt, true);
     }
 }

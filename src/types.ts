@@ -62,11 +62,23 @@ export type ConsistencyAnalysisResult = {
   consForHiring: string[];
   updatedOverallFitScore: number;
   hiringDecision: 'Recommended for Hire' | 'Not Recommended';
+  preliminaryHiringDecision: string;
 };
 
 export type RewrittenResumeResult = {
   rewrittenResume: string;
 };
 
-// FIX: Added LlmProvider type to support the multi-provider architecture in the llmService.
 export type LlmProvider = 'gemini' | 'openai' | 'anthropic' | 'groq';
+
+export type ApiKeys = {
+    openai?: string;
+    anthropic?: string;
+    groq?: string;
+};
+
+export type LlmConfig = {
+    provider: LlmProvider;
+    model: string;
+    apiKeys: ApiKeys;
+};

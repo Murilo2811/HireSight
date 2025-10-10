@@ -2,15 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { useTranslations } from '../../contexts/LanguageContext';
 import { Button } from '../ui/Button';
 import Sheet from '../ui/Sheet';
-import { EyeIcon, SunIcon, MoonIcon, LogInIcon, LogOutIcon, MenuIcon } from '../icons';
+import { EyeIcon, SunIcon, MoonIcon, LogInIcon, LogOutIcon, MenuIcon, SettingsIcon } from '../icons';
 
 interface NavbarProps {
   isLoggedIn: boolean;
   onLoginClick: () => void;
   onLogoutClick: () => void;
+  onSettingsClick: () => void;
 }
 
-const Navbar: React.FC<NavbarProps> = ({ isLoggedIn, onLoginClick, onLogoutClick }) => {
+const Navbar: React.FC<NavbarProps> = ({ isLoggedIn, onLoginClick, onLogoutClick, onSettingsClick }) => {
   const { language, setLanguage, t } = useTranslations();
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
     if (typeof window !== 'undefined' && localStorage.getItem('theme')) {
@@ -45,6 +46,11 @@ const Navbar: React.FC<NavbarProps> = ({ isLoggedIn, onLoginClick, onLogoutClick
         <MoonIcon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
         <span className="sr-only">Toggle theme</span>
       </Button>
+      
+      <Button variant="ghost" size="icon" onClick={onSettingsClick}>
+        <SettingsIcon className="h-[1.2rem] w-[1.2rem]" />
+        <span className="sr-only">Settings</span>
+      </Button>
 
       {isLoggedIn ? (
         <Button onClick={onLogoutClick}>
@@ -67,7 +73,7 @@ const Navbar: React.FC<NavbarProps> = ({ isLoggedIn, onLoginClick, onLogoutClick
         </a>
         
         {/* Desktop Nav */}
-        <nav className="hidden md:flex items-center gap-4 ml-auto">
+        <nav className="hidden md:flex items-center gap-2 ml-auto">
           {navContent}
         </nav>
 

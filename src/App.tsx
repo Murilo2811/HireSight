@@ -6,7 +6,7 @@ import {
   PreliminaryDecisionResult,
   RewrittenResumeResult,
 } from './types';
-import { getLlmService, LlmConfig } from './services/llmService';
+import { getLlmService, LlmConfig, ApiKeys } from './services/llmService';
 
 // Importa as novas seções
 import Navbar from './components/sections/Navbar';
@@ -15,10 +15,10 @@ import FeaturesSection from './components/sections/FeaturesSection';
 import InputSection from './components/sections/InputSection';
 import ResultsSection from './components/sections/ResultsSection';
 import AuthPage from './components/AuthPage';
-// FIX: Import `toast` which is now properly exported from the Toast component file.
+import SettingsModal from './components/SettingsModal';
 import { Toaster, toast } from './components/ui/Toast';
 
-type View = 'home' | 'auth';
+type View = 'home' | 'auth' | 'settings';
 
 const App: React.FC = () => {
   const { t, language } = useTranslations();
@@ -43,21 +43,34 @@ const App: React.FC = () => {
   const [activeAnalysis, setActiveAnalysis] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // FIX: Added state for LLM configuration to align with the new multi-provider architecture.
-  const [llmConfig, setLlmConfig] = useState<LlmConfig>({
-    provider: 'gemini',
-    model: 'gemini-2.5-flash',
-    apiKeys: {},
+  const [llmConfig, setLlmConfig] = useState<LlmConfig>(() => {
+    try {
+      const savedConfig = localStorage.getItem('llmConfig');
+      if (savedConfig) {
+        const parsed = JSON.parse(savedConfig);
+        // Basic validation to ensure the loaded config has the expected shape
+        if (parsed.provider && parsed.model && typeof parsed.apiKeys === 'object') {
+          return parsed;
+        }
+      }
+    } catch (e) {
+      console.error("Failed to parse LLM config from localStorage", e);
+    }
+    // Default config if nothing is saved or parsing fails
+    return {
+      provider: 'gemini',
+      model: 'gemini-2.5-flash',
+      apiKeys: {},
+    };
   });
 
   // Efeito para "roteamento" simples
   useEffect(() => {
     const handleHashChange = () => {
-      if (window.location.hash === '#auth') {
-        setView('auth');
-      } else {
-        setView('home');
-      }
+      const hash = window.location.hash;
+      if (hash === '#auth') setView('auth');
+      else if (hash === '#settings') setView('settings');
+      else setView('home');
     };
     window.addEventListener('hashchange', handleHashChange);
     handleHashChange(); // Seta a view inicial baseada no hash
@@ -98,8 +111,22 @@ const App: React.FC = () => {
     setRewrittenResume(null);
     setError(null);
   };
+  
+  const handleSaveSettings = (apiKeys: ApiKeys) => {
+    setLlmConfig(prevConfig => {
+      const newConfig = { ...prevConfig, apiKeys };
+      localStorage.setItem('llmConfig', JSON.stringify(newConfig));
+      toast.success(t('toast.settingsSaved'));
+      return newConfig;
+    });
+  };
+  
+  const handleLlmConfigChange = (newConfig: LlmConfig) => {
+      setLlmConfig(newConfig);
+      localStorage.setItem('llmConfig', JSON.stringify(newConfig));
+  };
 
-  // FIX: Updated the generic LLM action executor to work with service methods that don't require a single params object.
+
   const executeLlmAction = async <T,>(
     action: () => Promise<T>,
     actionName: string,
@@ -122,7 +149,6 @@ const App: React.FC = () => {
     }
   };
 
-  // FIX: Updated handler to use the LLM service factory and call the service method with positional arguments.
   const handleAnalyze = async (inputs: {
     jobInput: any;
     resumeInput: any;
@@ -136,7 +162,6 @@ const App: React.FC = () => {
     );
   };
   
-  // FIX: Updated handler to use the LLM service factory.
   const handleGenerateDecision = async () => {
     if (!analysisResult) return;
     const service = getLlmService(llmConfig);
@@ -147,7 +172,6 @@ const App: React.FC = () => {
     );
   };
   
-  // FIX: Updated handler to use the LLM service factory.
   const handleAnalyzeConsistency = async (inputs: { jobInput: any; resumeInput: any; interviewTranscript: string; }) => {
     if (!analysisResult) return;
     const service = getLlmService(llmConfig);
@@ -158,7 +182,6 @@ const App: React.FC = () => {
     );
   };
 
-  // FIX: Updated handler to use the LLM service factory.
   const handleRewriteResume = async (inputs: { jobInput: any; resumeInput: any; }) => {
      if (!analysisResult) return;
      const service = getLlmService(llmConfig);
@@ -173,6 +196,10 @@ const App: React.FC = () => {
     return <AuthPage onAuthSuccess={handleAuthSuccess} />;
   }
 
+  if (view === 'settings') {
+    return <SettingsModal onNavigateBack={() => navigate('home')} onSave={handleSaveSettings} initialKeys={llmConfig.apiKeys} />;
+  }
+
   return (
     <div className="bg-background text-foreground font-sans antialiased">
       <Toaster />
@@ -180,6 +207,7 @@ const App: React.FC = () => {
         isLoggedIn={isLoggedIn}
         onLoginClick={() => navigate('auth')}
         onLogoutClick={handleLogout}
+        onSettingsClick={() => navigate('settings')}
       />
       <main className="flex-1">
         <HeroSection onPrimaryCtaClick={handleStartAnalysisClick} />
@@ -190,6 +218,8 @@ const App: React.FC = () => {
           isLoading={isLoading && activeAnalysis === 'analyze'}
           isLoggedIn={isLoggedIn}
           onLoginClick={() => navigate('auth')}
+          llmConfig={llmConfig}
+          onLlmConfigChange={handleLlmConfigChange}
         />
         {error && (
             <div className="container max-w-5xl my-8">

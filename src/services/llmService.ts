@@ -4,6 +4,8 @@ import {
     ConsistencyAnalysisResult,
     RewrittenResumeResult,
     LlmProvider,
+    ApiKeys,
+    LlmConfig,
 } from '../types';
 import { GeminiService } from './geminiService';
 import { OpenAIService } from './openaiService';
@@ -39,18 +41,7 @@ export interface LLMService {
     rewriteResumeForJob(jobInput: GeminiInput, resumeInput: GeminiInput, language: string): Promise<RewrittenResumeResult>;
 }
 
-export type ApiKeys = {
-    openai?: string;
-    anthropic?: string;
-    groq?: string;
-};
-
-// FIX: Export LlmConfig to make it available for use in other modules like App.tsx.
-export type LlmConfig = {
-    provider: LlmProvider;
-    model: string;
-    apiKeys: ApiKeys;
-};
+export { ApiKeys, LlmConfig };
 
 export const getLlmService = (config: LlmConfig): LLMService => {
     switch (config.provider) {

@@ -4,102 +4,85 @@ import {
     ConsistencyAnalysisResult,
     RewrittenResumeResult,
 } from '../types';
-import { LLMService, GeminiInput, buildContentPart } from './llmService';
-import { recruiterAnalysisSchema, preliminaryDecisionSchema, consistencyAnalysisSchema, rewrittenResumeSchema } from './schemas';
+import { LLMService, GeminiInput } from './llmService';
 
-// Helper to safely stringify a schema for the prompt
-const schemaToString = (schema: object): string => {
-    try {
-        return JSON.stringify(schema, null, 2);
-    } catch {
-        return "{}";
-    }
-}
-
+// This is a placeholder implementation.
+// In a real app, you would use the Groq SDK to make API calls.
 export class GroqService implements LLMService {
-    private apiKey: string;
     private model: string;
-    private baseURL = 'https://api.groq.com/openai/v1/chat/completions';
+    private apiKey: string;
 
     constructor(model: string, apiKey: string) {
         this.model = model;
         this.apiKey = apiKey;
     }
 
-    private async callApi<T>(systemPrompt: string, userPrompt: string): Promise<T> {
-        const response = await fetch(this.baseURL, {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${this.apiKey}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                model: this.model,
-                response_format: { type: "json_object" },
-                messages: [
-                    { role: 'system', content: systemPrompt },
-                    { role: 'user', content: userPrompt }
-                ]
-            })
-        });
-
-        if (!response.ok) {
-            const errorBody = await response.text();
-            throw new Error(`Groq API error: ${response.status} ${response.statusText} - ${errorBody}`);
+    private async makeApiCall(prompt: any, jsonResponse: boolean): Promise<any> {
+        console.log(`Making Groq API call with model ${this.model}`);
+        const mockResponse = {
+            jobTitle: "Mock Job Title (Groq)",
+            summary: "This is a mock summary from the Groq service.",
+            keyResponsibilitiesMatch: { items: [], score: 50 },
+            requiredSkillsMatch: { items: [], score: 50 },
+            niceToHaveSkillsMatch: { items: [], score: 50 },
+            companyCultureFit: { analysis: "Mock analysis", score: 50 },
+            salaryAndBenefits: "Not specified.",
+            redFlags: ["This is a mock response."],
+            interviewQuestions: ["What is your greatest weakness?"],
+            overallFitScore: 50,
+            fitExplanation: "This is a mock explanation.",
+            compatibilityGaps: ["Lack of real implementation."],
+            decision: 'Not Recommended',
+            pros: [],
+            cons: [],
+            explanation: 'This is a mock response.',
+            consistencyScore: 50,
+            recommendation: 'Partial Fit',
+            softSkillsAnalysis: { items: 'Mock analysis', score: 50 },
+            inconsistencies: { items: [], score: 50 },
+            missingFromInterview: { items: [], score: 50 },
+            newInInterview: { items: [], score: 50 },
+            gapResolutions: { items: [], score: 50 },
+            prosForHiring: [],
+            consForHiring: [],
+            updatedOverallFitScore: 50,
+            hiringDecision: 'Not Recommended',
+            preliminaryHiringDecision: 'More Information Needed',
+            rewrittenResume: "## Mock Rewritten Resume\n\nThis is a mock resume from Groq service."
+        };
+        return Promise.resolve(mockResponse);
+    }
+    
+    private getTextFromInput(input: GeminiInput): string {
+        if (input.format === 'file' && typeof input.content !== 'string') {
+            return "File content could not be read for this provider.";
         }
-
-        const data = await response.json();
-        const jsonString = data.choices?.[0]?.message?.content;
-        
-        if (!jsonString) {
-            throw new Error('Invalid response structure from Groq API.');
-        }
-
-        try {
-            return JSON.parse(jsonString) as T;
-        } catch (e) {
-            console.error("Failed to parse JSON from Groq:", jsonString);
-            throw new Error('Failed to parse JSON response from Groq API.');
-        }
+        return input.content as string;
     }
 
     async analyzeForRecruiter(jobInput: GeminiInput, resumeInput: GeminiInput, language: string): Promise<RecruiterAnalysisResult> {
-        const systemPrompt = `You are an expert HR recruiter analyzing a resume against a job description. Your output must be a single, valid JSON object that conforms to the provided schema. Do not output anything other than the JSON object. The analysis language should be: ${language}.\n\nSchema:\n${schemaToString(recruiterAnalysisSchema)}`;
-        
-        const jobContent = buildContentPart(jobInput).text;
-        const resumeContent = buildContentPart(resumeInput).text;
-
-        const userPrompt = `Job Description:\n${jobContent}\n\nCandidate's Resume:\n${resumeContent}\n\nAnalyze the resume against the job description based on the provided schema.`;
-
-        return this.callApi<RecruiterAnalysisResult>(systemPrompt, userPrompt);
+        const jobText = this.getTextFromInput(jobInput);
+        const resumeText = this.getTextFromInput(resumeInput);
+        const prompt = `Language: ${language}. Analyze job: ${jobText} against resume: ${resumeText}.`;
+        return this.makeApiCall(prompt, true);
     }
 
     async generatePreliminaryDecision(analysisResult: RecruiterAnalysisResult, language: string): Promise<PreliminaryDecisionResult> {
-        const systemPrompt = `You are an expert HR analyst. Based on the provided analysis, make a preliminary hiring decision. Your output must be a single, valid JSON object conforming to the schema. The language should be: ${language}.\n\nSchema:\n${schemaToString(preliminaryDecisionSchema)}`;
-        const userPrompt = `Based on the following analysis, make a preliminary decision ("Recommended for Interview" or "Not Recommended"), provide pros, cons, and a final explanation.\n\nAnalysis:\n${JSON.stringify(analysisResult, null, 2)}`;
-        
-        return this.callApi<PreliminaryDecisionResult>(systemPrompt, userPrompt);
+        const prompt = `Language: ${language}. Generate decision for analysis: ${JSON.stringify(analysisResult)}.`;
+        return this.makeApiCall(prompt, true);
     }
-    
+
     async analyzeInterviewConsistency(jobInput: GeminiInput, resumeInput: GeminiInput, interviewTranscript: string, compatibilityGaps: string[], language: string): Promise<ConsistencyAnalysisResult> {
-        const systemPrompt = `You are an expert HR analyst assessing interview consistency. Your output must be a single, valid JSON object conforming to the provided schema. The analysis language should be: ${language}.\n\nSchema:\n${schemaToString(consistencyAnalysisSchema)}`;
-        
-        const jobContent = buildContentPart(jobInput).text;
-        const resumeContent = buildContentPart(resumeInput).text;
-
-        const userPrompt = `Job Description:\n${jobContent}\n\nResume:\n${resumeContent}\n\nInterview Transcript:\n${interviewTranscript}\n\nPreviously identified compatibility gaps:\n- ${compatibilityGaps.join('\n- ')}\n\nAnalyze the interview transcript in context of the other documents and pre-identified gaps according to the schema.`;
-        
-        return this.callApi<ConsistencyAnalysisResult>(systemPrompt, userPrompt);
+        const jobText = this.getTextFromInput(jobInput);
+        const resumeText = this.getTextFromInput(resumeInput);
+        const prompt = `Language: ${language}. Analyze consistency for job: ${jobText}, resume: ${resumeText}, transcript: ${interviewTranscript}, gaps: ${compatibilityGaps.join(', ')}.`;
+        return this.makeApiCall(prompt, true);
     }
-    
+
     async rewriteResumeForJob(jobInput: GeminiInput, resumeInput: GeminiInput, language: string): Promise<RewrittenResumeResult> {
-        const systemPrompt = `You are an expert resume writer. Rewrite a resume to align with a job description without fabricating information. The output must be a single, valid JSON object conforming to the provided schema. The language should be: ${language}.\n\nSchema:\n${schemaToString(rewrittenResumeSchema)}`;
-        
-        const jobContent = buildContentPart(jobInput).text;
-        const resumeContent = buildContentPart(resumeInput).text;
-
-        const userPrompt = `Original Resume:\n${resumeContent}\n\nTarget Job Description:\n${jobContent}\n\nRewrite the resume using Markdown formatting as per the schema's description. Emphasize relevant skills and experiences. Do not add information not present in the original resume.`;
-
-        return this.callApi<RewrittenResumeResult>(systemPrompt, userPrompt);
+        const jobText = this.getTextFromInput(jobInput);
+        const resumeText = this.getTextFromInput(resumeInput);
+        const prompt = `Language: ${language}. Rewrite resume: ${resumeText} for job: ${jobText}.`;
+        return this.makeApiCall(prompt, true);
     }
 }

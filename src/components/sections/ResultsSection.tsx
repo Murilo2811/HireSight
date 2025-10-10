@@ -107,6 +107,12 @@ const ResultsSection: React.FC<ResultsSectionProps> = ({
     }
   }
 
+  const getPreliminaryDecisionStyle = (decision: string): 'success' | 'danger' | 'warning' => {
+    if (decision === 'Likely Hire') return 'success';
+    if (decision === 'Unlikely Hire') return 'danger';
+    return 'warning'; // For 'More Information Needed'
+  };
+
   return (
     <section className="py-20 sm:py-32 animate-fade-in">
       <div className="container mx-auto px-4 max-w-5xl space-y-8">
@@ -179,9 +185,18 @@ const ResultsSection: React.FC<ResultsSectionProps> = ({
         {consistencyResult && (
              <Card>
                 <CardHeader><CardTitle>{t('consistency.title')}</CardTitle></CardHeader>
-                <CardContent>
-                     <Badge>{consistencyResult.recommendation}</Badge>
-                     <p className="mt-4 text-muted-foreground">{consistencyResult.summary}</p>
+                <CardContent className="divide-y divide-border -mt-6">
+                    <ResultSection title={t('consistency.summary')}>
+                        <p className="text-muted-foreground">{consistencyResult.summary}</p>
+                    </ResultSection>
+                     <ResultSection title={t('consistency.preliminaryHiringDecision')}>
+                        <Badge variant={getPreliminaryDecisionStyle(consistencyResult.preliminaryHiringDecision)}>
+                            {consistencyResult.preliminaryHiringDecision}
+                        </Badge>
+                    </ResultSection>
+                    <ResultSection title={t('consistency.recommendation')}>
+                         <Badge>{consistencyResult.recommendation}</Badge>
+                    </ResultSection>
                 </CardContent>
             </Card>
         )}

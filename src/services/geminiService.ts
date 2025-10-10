@@ -5,32 +5,30 @@ import {
     ConsistencyAnalysisResult,
     RewrittenResumeResult,
 } from '../types';
-import { recruiterAnalysisSchema, preliminaryDecisionSchema, consistencyAnalysisSchema, rewrittenResumeSchema } from './schemas';
-import { LLMService, GeminiInput } from './llmService';
+import { LLMService, GeminiInput, buildContentPart } from './llmService';
+import {
+    recruiterAnalysisSchema,
+    preliminaryDecisionSchema,
+    consistencyAnalysisSchema,
+    rewrittenResumeSchema,
+} from './schemas';
 
-/**
- * Helper to build a content part for the Gemini API, handling both text and file data.
- */
-const buildContentPart = (input: GeminiInput) => {
-    if (input.format === 'file' && typeof input.content !== 'string') {
-        return { inlineData: input.content };
-    }
-    return { text: input.content as string };
-};
+// Gemini API client setup. Follows guideline to use environment variable.
+// FIX: Using a single, module-level instance of GoogleGenAI as per guidelines and best practices.
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
-// FIX: Refactored from standalone functions to a class that implements the LLMService interface.
-// This resolves the export error in llmService.ts and aligns the Gemini implementation
-// with the other service providers (OpenAI, Anthropic, etc.).
 export class GeminiService implements LLMService {
-    private ai: GoogleGenAI;
     private model: string;
 
     constructor(model: string) {
-        this.ai = new GoogleGenAI({apiKey: process.env.API_KEY});
         this.model = model;
     }
 
-    async analyzeForRecruiter(jobInput: GeminiInput, resumeInput: GeminiInput, language: string): Promise<RecruiterAnalysisResult> {
+    async analyzeForRecruiter(
+        jobInput: GeminiInput,
+        resumeInput: GeminiInput,
+        language: string
+    ): Promise<RecruiterAnalysisResult> {
         const jobPart = buildContentPart(jobInput);
         const resumePart = buildContentPart(resumeInput);
 
@@ -49,7 +47,7 @@ Analyze the resume against the job description and provide a detailed analysis.
 - Identify any red flags.` }
         ];
 
-        const response = await this.ai.models.generateContent({
+        const response = await ai.models.generateContent({
             model: this.model,
             contents: { parts: promptParts },
             config: {
@@ -62,7 +60,10 @@ Analyze the resume against the job description and provide a detailed analysis.
         return result as RecruiterAnalysisResult;
     }
 
-    async generatePreliminaryDecision(analysisResult: RecruiterAnalysisResult, language: string): Promise<PreliminaryDecisionResult> {
+    async generatePreliminaryDecision(
+        analysisResult: RecruiterAnalysisResult,
+        language: string
+    ): Promise<PreliminaryDecisionResult> {
         const prompt = `
 Based on the following recruitment analysis, make a preliminary decision.
 The decision should be either "Recommended for Interview" or "Not Recommended".
@@ -74,7 +75,7 @@ Analysis:
 ${JSON.stringify(analysisResult, null, 2)}
 `;
 
-        const response = await this.ai.models.generateContent({
+        const response = await ai.models.generateContent({
             model: this.model,
             contents: prompt,
             config: {
@@ -87,7 +88,13 @@ ${JSON.stringify(analysisResult, null, 2)}
         return result as PreliminaryDecisionResult;
     }
 
-    async analyzeInterviewConsistency(jobInput: GeminiInput, resumeInput: GeminiInput, interviewTranscript: string, compatibilityGaps: string[], language: string): Promise<ConsistencyAnalysisResult> {
+    async analyzeInterviewConsistency(
+        jobInput: GeminiInput,
+        resumeInput: GeminiInput,
+        interviewTranscript: string,
+        compatibilityGaps: string[],
+        language: string
+    ): Promise<ConsistencyAnalysisResult> {
         const jobPart = buildContentPart(jobInput);
         const resumePart = buildContentPart(resumeInput);
 
@@ -109,7 +116,7 @@ Analyze the interview transcript in the context of the resume, job description, 
 - Provide a final hiring decision and an updated overall fit score.` }
         ];
 
-        const response = await this.ai.models.generateContent({
+        const response = await ai.models.generateContent({
             model: this.model,
             contents: { parts: promptParts },
             config: {
@@ -122,7 +129,11 @@ Analyze the interview transcript in the context of the resume, job description, 
         return result as ConsistencyAnalysisResult;
     }
 
-    async rewriteResumeForJob(jobInput: GeminiInput, resumeInput: GeminiInput, language: string): Promise<RewrittenResumeResult> {
+    async rewriteResumeForJob(
+        jobInput: GeminiInput,
+        resumeInput: GeminiInput,
+        language: string
+    ): Promise<RewrittenResumeResult> {
         const jobPart = buildContentPart(jobInput);
         const resumePart = buildContentPart(resumeInput);
 
@@ -149,7 +160,7 @@ The goal is to emphasize skills and experiences from the original resume that ar
 - The output should be the complete, rewritten resume text in a single Markdown string.`}
         ];
 
-        const response = await this.ai.models.generateContent({
+        const response = await ai.models.generateContent({
             model: this.model,
             contents: { parts: promptParts },
             config: {
