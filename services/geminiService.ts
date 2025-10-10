@@ -176,11 +176,9 @@ export const analyzeForRecruiter = async (
 
     const jobPart = buildContentPart(jobInput);
     const resumePart = buildContentPart(resumeInput);
-    const currentDate = new Date().toLocaleDateString(language, { year: 'numeric', month: 'long', day: 'numeric' });
 
     const promptParts = [
         { text: `You are an expert HR recruiter analyzing a resume against a job description. Your output must be in JSON and conform to the provided schema. The analysis language should be: ${language}.` },
-        { text: `For context, today's date is ${currentDate}.` },
         { text: "Job Description:" },
         jobPart,
         { text: "Candidate's Resume:" },
@@ -191,7 +189,7 @@ Analyze the resume against the job description and provide a detailed analysis.
 - Provide an overall fit score and a detailed explanation.
 - Identify specific compatibility gaps.
 - Suggest relevant interview questions.
-- Identify any red flags. **IMPORTANT rules for dates:** When analyzing employment dates, consider that terms like "Atual", "Presente", or the current year as an end date mean the job is ongoing. Only flag a job as a "future" experience if its **start date** is in the future. Do not flag jobs that have already concluded, even if the end date was recent.` }
+- Identify any red flags.` }
     ];
 
     const response = await ai.models.generateContent({
