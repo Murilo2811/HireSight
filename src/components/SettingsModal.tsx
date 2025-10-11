@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useTranslations } from '../contexts/LanguageContext';
-import { ApiKeys } from '../services/llmService';
+import { ApiKeys } from '../types';
 import { ArrowLeftIcon } from './icons';
 import { Button } from './ui/Button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/Card';

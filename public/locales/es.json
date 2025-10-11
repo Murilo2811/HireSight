@@ -62,6 +62,7 @@
   "auth.signup.description": "Comienza a usar HireSight en segundos.",
   "auth.emailLabel": "Correo Electrónico",
   "auth.passwordLabel": "Contraseña",
+  "auth.rememberMe": "Recuérdame",
   "auth.login.button": "Iniciar Sesión",
   "auth.signup.button": "Crear Cuenta",
   "auth.toast.loginRequired": "Debes iniciar sesión para realizar un análisis.",

@@ -23,7 +23,7 @@ type View = 'home' | 'auth' | 'settings';
 const App: React.FC = () => {
   const { t, language } = useTranslations();
   const [view, setView] = useState<View>('home');
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(() => localStorage.getItem('isLoggedIn') === 'true');
 
   // Referência para scroll
   const analysisSectionRef = useRef<HTMLDivElement>(null);
@@ -90,8 +90,11 @@ const App: React.FC = () => {
     }
   };
 
-  const handleAuthSuccess = () => {
+  const handleAuthSuccess = (remember: boolean) => {
     setIsLoggedIn(true);
+    if (remember) {
+      localStorage.setItem('isLoggedIn', 'true');
+    }
     navigate('home');
     toast.success(t('auth.toast.loginSuccess'));
     setTimeout(() => {
@@ -101,6 +104,7 @@ const App: React.FC = () => {
 
   const handleLogout = () => {
     setIsLoggedIn(false);
+    localStorage.removeItem('isLoggedIn');
     toast.info(t('auth.toast.logoutSuccess'));
   };
 
@@ -154,42 +158,66 @@ const App: React.FC = () => {
     resumeInput: any;
   }) => {
     resetAllResults();
-    const service = getLlmService(llmConfig);
-    executeLlmAction(
-      () => service.analyzeForRecruiter(inputs.jobInput, inputs.resumeInput, language),
-      'analyze',
-      setAnalysisResult
-    );
+    try {
+        const service = getLlmService(llmConfig);
+        executeLlmAction(
+          () => service.analyzeForRecruiter(inputs.jobInput, inputs.resumeInput, language),
+          'analyze',
+          setAnalysisResult
+        );
+    } catch (e) {
+        const errorMessage = e instanceof Error ? e.message : t('error.unknown');
+        setError(errorMessage);
+        toast.error(`${t('error.title')}: ${errorMessage}`);
+    }
   };
   
   const handleGenerateDecision = async () => {
     if (!analysisResult) return;
-    const service = getLlmService(llmConfig);
-    executeLlmAction(
-      () => service.generatePreliminaryDecision(analysisResult, language),
-      'generateDecision',
-      setPreliminaryDecision
-    );
+    try {
+        const service = getLlmService(llmConfig);
+        executeLlmAction(
+          () => service.generatePreliminaryDecision(analysisResult, language),
+          'generateDecision',
+          setPreliminaryDecision
+        );
+    } catch (e) {
+        const errorMessage = e instanceof Error ? e.message : t('error.unknown');
+        setError(errorMessage);
+        toast.error(`${t('error.title')}: ${errorMessage}`);
+    }
   };
   
   const handleAnalyzeConsistency = async (inputs: { jobInput: any; resumeInput: any; interviewTranscript: string; }) => {
     if (!analysisResult) return;
-    const service = getLlmService(llmConfig);
-    executeLlmAction(
-      () => service.analyzeInterviewConsistency(inputs.jobInput, inputs.resumeInput, inputs.interviewTranscript, analysisResult.compatibilityGaps, language),
-      'analyzeConsistency',
-      setConsistencyResult
-    );
+    try {
+        const service = getLlmService(llmConfig);
+        executeLlmAction(
+          () => service.analyzeInterviewConsistency(inputs.jobInput, inputs.resumeInput, inputs.interviewTranscript, analysisResult.compatibilityGaps, language),
+          'analyzeConsistency',
+          setConsistencyResult
+        );
+    } catch (e) {
+        const errorMessage = e instanceof Error ? e.message : t('error.unknown');
+        setError(errorMessage);
+        toast.error(`${t('error.title')}: ${errorMessage}`);
+    }
   };
 
   const handleRewriteResume = async (inputs: { jobInput: any; resumeInput: any; }) => {
      if (!analysisResult) return;
-     const service = getLlmService(llmConfig);
-     executeLlmAction(
-      () => service.rewriteResumeForJob(inputs.jobInput, inputs.resumeInput, language),
-      'rewriteResume',
-      setRewrittenResume
-    );
+     try {
+        const service = getLlmService(llmConfig);
+        executeLlmAction(
+         () => service.rewriteResumeForJob(inputs.jobInput, inputs.resumeInput, language),
+         'rewriteResume',
+         setRewrittenResume
+       );
+     } catch (e) {
+        const errorMessage = e instanceof Error ? e.message : t('error.unknown');
+        setError(errorMessage);
+        toast.error(`${t('error.title')}: ${errorMessage}`);
+     }
   };
 
   if (view === 'auth') {

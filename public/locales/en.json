@@ -62,6 +62,7 @@
   "auth.signup.description": "Get started with HireSight in seconds.",
   "auth.emailLabel": "Email",
   "auth.passwordLabel": "Password",
+  "auth.rememberMe": "Remember Me",
   "auth.login.button": "Log In",
   "auth.signup.button": "Create Account",
   "auth.toast.loginRequired": "You must be logged in to perform an analysis.",

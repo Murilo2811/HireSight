@@ -14,7 +14,6 @@ import {
 } from './schemas';
 
 // Gemini API client setup. Follows guideline to use environment variable.
-// FIX: Using a single, module-level instance of GoogleGenAI as per guidelines and best practices.
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 export class GeminiService implements LLMService {
@@ -33,7 +32,7 @@ export class GeminiService implements LLMService {
         const resumePart = buildContentPart(resumeInput);
 
         const promptParts = [
-            { text: `You are an expert HR recruiter analyzing a resume against a job description. Your output must be in JSON and conform to the provided schema. The analysis language should be: ${language}.` },
+            { text: `You are an expert HR recruiter analyzing a resume against a job description. Your output must be in JSON and conform to the provided schema. The analysis language must be strictly: ${language}.` },
             { text: "Job Description:" },
             jobPart,
             { text: "Candidate's Resume:" },
@@ -68,7 +67,7 @@ Analyze the resume against the job description and provide a detailed analysis.
 Based on the following recruitment analysis, make a preliminary decision.
 The decision should be either "Recommended for Interview" or "Not Recommended".
 Provide a list of pros and cons, and a final explanation for your decision.
-The response language must be ${language}.
+The response language must be strictly: ${language}.
 Your output must be in JSON and conform to the provided schema.
 
 Analysis:
@@ -99,7 +98,7 @@ ${JSON.stringify(analysisResult, null, 2)}
         const resumePart = buildContentPart(resumeInput);
 
         const promptParts = [
-            { text: `You are an expert HR analyst assessing the consistency between a candidate's resume, their interview, and the job description. Your output must be in JSON and conform to the provided schema. The analysis language should be: ${language}.` },
+            { text: `You are an expert HR analyst assessing the consistency between a candidate's resume, their interview, and the job description. Your output must be in JSON and conform to the provided schema. The analysis language must be strictly: ${language}.` },
             { text: "Job Description:" },
             jobPart,
             { text: "Candidate's Resume:" },
@@ -110,6 +109,7 @@ ${JSON.stringify(analysisResult, null, 2)}
 Analyze the interview transcript in the context of the resume, job description, and pre-identified gaps.
 - For each compatibility gap, determine if the candidate's interview responses resolved it. The 'resolution' should quote or summarize the relevant part of the interview. The 'isResolved' flag must be set to 'true' only if the gap is fully and satisfactorily addressed. If not, set it to 'false' and explain why in the 'resolution' text.
 - Assess overall consistency between their resume and interview answers.
+- Provide a 'preliminaryHiringDecision' based on the interview. This should be a quick assessment ('Likely Hire', 'Unlikely Hire', 'More Information Needed').
 - Identify any new information or skills that emerged during the interview.
 - Identify key information from the resume that was not discussed.
 - Analyze soft skills demonstrated.
@@ -138,7 +138,7 @@ Analyze the interview transcript in the context of the resume, job description, 
         const resumePart = buildContentPart(resumeInput);
 
         const promptParts = [
-            { text: `You are an expert resume writer. Your task is to rewrite a resume to better align with a specific job description, without fabricating information. Maintain a professional tone. The output language should be: ${language}. Your output must be in JSON and conform to the provided schema.` },
+            { text: `You are an expert resume writer. Your task is to rewrite a resume to better align with a specific job description, without fabricating information. Maintain a professional tone. The output language must be strictly: ${language}. Your output must be in JSON and conform to the provided schema.` },
             { text: "Original Resume:" },
             resumePart,
             { text: "Target Job Description:" },

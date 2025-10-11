@@ -17,11 +17,31 @@ export class AnthropicService implements LLMService {
         this.apiKey = apiKey;
     }
 
-    private async makeApiCall(prompt: any, jsonResponse: boolean): Promise<any> {
-        console.log(`Making Anthropic API call with model ${this.model}`);
-        const mockResponse = {
+    private async getMockResponse(language: string): Promise<any> {
+        console.log(`Making MOCK Anthropic API call with model ${this.model} for language: ${language}`);
+        
+        const textContent = {
+            en: {
+                summary: "This is a mock summary from the Anthropic service.",
+                fitExplanation: "This is a mock explanation from the Anthropic service.",
+                rewrittenResume: "## Mock Rewritten Resume\n\nThis is a mock resume from Anthropic service."
+            },
+            pt: {
+                summary: "Este é um resumo de exemplo do serviço Anthropic.",
+                fitExplanation: "Esta é uma explicação de exemplo do serviço Anthropic.",
+                rewrittenResume: "## Exemplo de Currículo Reescrito\n\nEste é um currículo de exemplo do serviço Anthropic."
+            },
+            es: {
+                summary: "Este es un resumen de prueba del servicio Anthropic.",
+                fitExplanation: "Esta es una explicación de prueba del servicio Anthropic.",
+                rewrittenResume: "## Currículum Reescrito de Prueba\n\nEste es un currículum de prueba del servicio Anthropic."
+            }
+        };
+        const selectedText = textContent[language as 'en' | 'pt' | 'es'] || textContent.en;
+
+        return Promise.resolve({
             jobTitle: "Mock Job Title (Anthropic)",
-            summary: "This is a mock summary from the Anthropic service.",
+            summary: selectedText.summary,
             keyResponsibilitiesMatch: { items: [], score: 50 },
             requiredSkillsMatch: { items: [], score: 50 },
             niceToHaveSkillsMatch: { items: [], score: 50 },
@@ -30,7 +50,7 @@ export class AnthropicService implements LLMService {
             redFlags: ["This is a mock response."],
             interviewQuestions: ["What is your greatest weakness?"],
             overallFitScore: 50,
-            fitExplanation: "This is a mock explanation.",
+            fitExplanation: selectedText.fitExplanation,
             compatibilityGaps: ["Lack of real implementation."],
             decision: 'Not Recommended',
             pros: [],
@@ -48,41 +68,23 @@ export class AnthropicService implements LLMService {
             updatedOverallFitScore: 50,
             hiringDecision: 'Not Recommended',
             preliminaryHiringDecision: 'More Information Needed',
-            rewrittenResume: "## Mock Rewritten Resume\n\nThis is a mock resume from Anthropic service."
-        };
-        return Promise.resolve(mockResponse);
+            rewrittenResume: selectedText.rewrittenResume
+        });
     }
     
-    private getTextFromInput(input: GeminiInput): string {
-        if (input.format === 'file' && typeof input.content !== 'string') {
-            return "File content could not be read for this provider.";
-        }
-        return input.content as string;
-    }
-
     async analyzeForRecruiter(jobInput: GeminiInput, resumeInput: GeminiInput, language: string): Promise<RecruiterAnalysisResult> {
-        const jobText = this.getTextFromInput(jobInput);
-        const resumeText = this.getTextFromInput(resumeInput);
-        const prompt = `Language: ${language}. Analyze job: ${jobText} against resume: ${resumeText}.`;
-        return this.makeApiCall(prompt, true);
+        return this.getMockResponse(language);
     }
 
     async generatePreliminaryDecision(analysisResult: RecruiterAnalysisResult, language: string): Promise<PreliminaryDecisionResult> {
-        const prompt = `Language: ${language}. Generate decision for analysis: ${JSON.stringify(analysisResult)}.`;
-        return this.makeApiCall(prompt, true);
+        return this.getMockResponse(language);
     }
 
     async analyzeInterviewConsistency(jobInput: GeminiInput, resumeInput: GeminiInput, interviewTranscript: string, compatibilityGaps: string[], language: string): Promise<ConsistencyAnalysisResult> {
-        const jobText = this.getTextFromInput(jobInput);
-        const resumeText = this.getTextFromInput(resumeInput);
-        const prompt = `Language: ${language}. Analyze consistency for job: ${jobText}, resume: ${resumeText}, transcript: ${interviewTranscript}, gaps: ${compatibilityGaps.join(', ')}.`;
-        return this.makeApiCall(prompt, true);
+        return this.getMockResponse(language);
     }
 
     async rewriteResumeForJob(jobInput: GeminiInput, resumeInput: GeminiInput, language: string): Promise<RewrittenResumeResult> {
-        const jobText = this.getTextFromInput(jobInput);
-        const resumeText = this.getTextFromInput(resumeInput);
-        const prompt = `Language: ${language}. Rewrite resume: ${resumeText} for job: ${jobText}.`;
-        return this.makeApiCall(prompt, true);
+        return this.getMockResponse(language);
     }
 }
