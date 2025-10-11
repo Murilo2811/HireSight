@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useTranslations } from '../contexts/LanguageContext';
-import { ApiKeys, LlmConfig, LlmProvider } from '../types';
+import { LlmConfig, LlmProvider } from '../types';
 import { ArrowLeftIcon } from './icons';
 import { Button } from './ui/Button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/Card';
@@ -46,7 +46,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onNavigateBack, onSave, i
         onNavigateBack();
     };
     
-    const handleApiKeyChange = (provider: keyof ApiKeys, value: string) => {
+    const handleApiKeyChange = (provider: keyof LlmConfig['apiKeys'], value: string) => {
         setConfig(prev => ({ 
             ...prev, 
             apiKeys: { ...prev.apiKeys, [provider]: value } 
@@ -114,41 +114,54 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onNavigateBack, onSave, i
                              <CardDescription>{t('settings.description')}</CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <div className="space-y-6">
-                                <div>
-                                    <Label htmlFor="openai-key" className="font-semibold">OpenAI</Label>
-                                    <p className="text-xs text-muted-foreground mb-2">{t('settings.openaiKey')}</p>
-                                    <Input
-                                        id="openai-key"
-                                        type="password"
-                                        value={config.apiKeys.openai || ''}
-                                        onChange={e => handleApiKeyChange('openai', e.target.value)}
-                                        placeholder={t('settings.keyPlaceholder')}
-                                    />
+                            {config.provider === 'gemini' ? (
+                                <div className="bg-muted/50 p-4 rounded-lg border">
+                                    <h4 className="font-semibold text-foreground">{t('settings.gemini.infoTitle')}</h4>
+                                    <p className="text-sm text-muted-foreground mt-1">{t('settings.gemini.infoMessage')}</p>
                                 </div>
-                                <div>
-                                    <Label htmlFor="anthropic-key" className="font-semibold">Anthropic (Claude)</Label>
-                                    <p className="text-xs text-muted-foreground mb-2">{t('settings.anthropicKey')}</p>
-                                    <Input
-                                        id="anthropic-key"
-                                        type="password"
-                                        value={config.apiKeys.anthropic || ''}
-                                        onChange={e => handleApiKeyChange('anthropic', e.target.value)}
-                                        placeholder={t('settings.keyPlaceholder')}
-                                    />
+                            ) : (
+                                <div className="space-y-6">
+                                    {config.provider === 'openai' && (
+                                        <div>
+                                            <Label htmlFor="openai-key" className="font-semibold">OpenAI</Label>
+                                            <p className="text-xs text-muted-foreground mb-2">{t('settings.openaiKey')}</p>
+                                            <Input
+                                                id="openai-key"
+                                                type="password"
+                                                value={config.apiKeys.openai || ''}
+                                                onChange={e => handleApiKeyChange('openai', e.target.value)}
+                                                placeholder={t('settings.keyPlaceholder')}
+                                            />
+                                        </div>
+                                    )}
+                                    {config.provider === 'anthropic' && (
+                                        <div>
+                                            <Label htmlFor="anthropic-key" className="font-semibold">Anthropic (Claude)</Label>
+                                            <p className="text-xs text-muted-foreground mb-2">{t('settings.anthropicKey')}</p>
+                                            <Input
+                                                id="anthropic-key"
+                                                type="password"
+                                                value={config.apiKeys.anthropic || ''}
+                                                onChange={e => handleApiKeyChange('anthropic', e.target.value)}
+                                                placeholder={t('settings.keyPlaceholder')}
+                                            />
+                                        </div>
+                                    )}
+                                    {config.provider === 'groq' && (
+                                        <div>
+                                            <Label htmlFor="groq-key" className="font-semibold">Groq</Label>
+                                            <p className="text-xs text-muted-foreground mb-2">{t('settings.groqKey')}</p>
+                                            <Input
+                                                id="groq-key"
+                                                type="password"
+                                                value={config.apiKeys.groq || ''}
+                                                onChange={e => handleApiKeyChange('groq', e.target.value)}
+                                                placeholder={t('settings.keyPlaceholder')}
+                                            />
+                                        </div>
+                                    )}
                                 </div>
-                                 <div>
-                                    <Label htmlFor="groq-key" className="font-semibold">Groq</Label>
-                                    <p className="text-xs text-muted-foreground mb-2">{t('settings.groqKey')}</p>
-                                    <Input
-                                        id="groq-key"
-                                        type="password"
-                                        value={config.apiKeys.groq || ''}
-                                        onChange={e => handleApiKeyChange('groq', e.target.value)}
-                                        placeholder={t('settings.keyPlaceholder')}
-                                    />
-                                </div>
-                            </div>
+                            )}
                         </CardContent>
                     </Card>
                     <div className="mt-8 flex justify-end gap-3">

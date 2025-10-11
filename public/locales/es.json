@@ -183,6 +183,10 @@
     "anthropicKey": "Clave de API para modelos de Claude.",
     "groqKey": "Clave de API para modelos LLaMA y Mixtral en Groq.",
     "keyPlaceholder": "Introduce tu clave de API...",
+    "gemini": {
+        "infoTitle": "Clave de API de Gemini",
+        "infoMessage": "La clave de API de Gemini se configura de forma segura a través de una variable de entorno (API_KEY) y no se puede establecer en la interfaz de usuario."
+    },
     "aiProvider": {
         "title": "Configuración del Modelo de IA",
         "description": "Selecciona el proveedor y el modelo que deseas usar para el análisis. Algunos proveedores requieren una clave de API en la configuración.",
@@ -212,7 +216,12 @@
     "unknown": "Ocurrió un error desconocido. Por favor, revisa la consola para más detalles.",
     "boundaryTitle": "Algo salió mal",
     "boundaryMessage": "Lo sentimos, pero la aplicación encontró un error inesperado. Por favor, intenta refrescar la página.",
-    "boundaryDetails": "Detalles del Error"
+    "boundaryDetails": "Detalles del Error",
+    "geminiKeyMissing": "Falta la clave de API de Google Gemini. Debe configurarse como una variable de entorno.",
+    "openaiKeyMissing": "Falta la clave de API de OpenAI. Por favor, agrégala en la configuración.",
+    "anthropicKeyMissing": "Falta la clave de API de Anthropic. Por favor, agrégala en la configuración.",
+    "groqKeyMissing": "Falta la clave de API de Groq. Por favor, agrégala en la configuración.",
+    "serviceNotInitialized": "El servicio de IA no está inicializado. Por favor, comprueba la configuración de tu clave de API."
   },
   "toast": {
       "success": {

@@ -183,6 +183,10 @@
     "anthropicKey": "API key for Claude models.",
     "groqKey": "API key for LLaMA and Mixtral models on Groq.",
     "keyPlaceholder": "Enter your API key...",
+    "gemini": {
+        "infoTitle": "Gemini API Key",
+        "infoMessage": "The Gemini API key is configured securely via an environment variable (API_KEY) and cannot be set in the user interface."
+    },
     "aiProvider": {
         "title": "AI Model Configuration",
         "description": "Select the provider and model you wish to use for the analysis. Some providers require an API key in the settings.",
@@ -212,7 +216,12 @@
     "unknown": "An unknown error occurred. Please check the console for details.",
     "boundaryTitle": "Something went wrong",
     "boundaryMessage": "We're sorry, but the application encountered an unexpected error. Please try refreshing the page.",
-    "boundaryDetails": "Error Details"
+    "boundaryDetails": "Error Details",
+    "geminiKeyMissing": "Google Gemini API Key is missing. It must be configured as an environment variable.",
+    "openaiKeyMissing": "OpenAI API Key is missing. Please add it in the settings.",
+    "anthropicKeyMissing": "Anthropic API Key is missing. Please add it in the settings.",
+    "groqKeyMissing": "Groq API Key is missing. Please add it in the settings.",
+    "serviceNotInitialized": "AI service is not initialized. Please check your API key settings."
   },
   "toast": {
       "success": {

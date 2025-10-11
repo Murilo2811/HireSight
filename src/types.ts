@@ -1,3 +1,4 @@
+
 export type MatchStatus = 'Match' | 'Partial' | 'No Match';
 
 export type MatchedItem = {
@@ -73,14 +74,12 @@ export type RewrittenResumeResult = {
 
 export type LlmProvider = 'gemini' | 'openai' | 'anthropic' | 'groq';
 
-export type ApiKeys = {
-    openai?: string;
-    anthropic?: string;
-    groq?: string;
-};
-
 export type LlmConfig = {
     provider: LlmProvider;
     model: string;
-    apiKeys: ApiKeys;
+    apiKeys: {
+        openai?: string;
+        anthropic?: string;
+        groq?: string;
+    };
 };

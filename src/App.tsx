@@ -39,7 +39,15 @@ const App: React.FC = () => {
     return { provider: 'gemini', model: 'gemini-2.5-flash', apiKeys: {} };
   });
 
-  const llmService = useMemo(() => getLlmService(llmConfig), [llmConfig]);
+  const llmService = useMemo(() => {
+    try {
+      return getLlmService(llmConfig)
+    } catch(e) {
+      const errorMessage = e instanceof Error ? e.message : 'error.unknown';
+      toast.error(t(errorMessage));
+      return null;
+    }
+  }, [llmConfig, t]);
 
   // Analysis State
   const [analysisResult, setAnalysisResult] = useState<RecruiterAnalysisResult | null>(null);
@@ -84,6 +92,12 @@ const App: React.FC = () => {
     stateSetter: (result: any) => void,
     analysisType: string
   ) => {
+    if (!llmService) {
+        const errorMsg = t('error.serviceNotInitialized');
+        setError(errorMsg);
+        toast.error(errorMsg);
+        return;
+    }
     setIsLoading(true);
     setActiveAnalysis(analysisType);
     setError(null);
@@ -92,9 +106,9 @@ const App: React.FC = () => {
       stateSetter(result);
       toast.success(t(`toast.success.${analysisType}`));
     } catch (e) {
-      const errorMessage = e instanceof Error ? e.message : t('error.unknown');
-      setError(errorMessage);
-      toast.error(errorMessage);
+      const errorMessage = e instanceof Error ? e.message : 'error.unknown';
+      setError(t(errorMessage));
+      toast.error(t(errorMessage));
     } finally {
       setIsLoading(false);
       setActiveAnalysis(null);
@@ -102,7 +116,7 @@ const App: React.FC = () => {
   };
 
   const handleAnalyze = async (inputs: { jobInput: GeminiInput; resumeInput: GeminiInput; interviewTranscript?: string }) => {
-    // Reset previous results
+    if (!llmService) return;
     setAnalysisResult(null);
     setPreliminaryDecision(null);
     setConsistencyResult(null);
@@ -117,7 +131,7 @@ const App: React.FC = () => {
   };
   
   const handleGenerateDecision = async () => {
-    if (!analysisResult) return;
+    if (!analysisResult || !llmService) return;
     await executeAnalysis(
       () => llmService.generatePreliminaryDecision(analysisResult, language),
       setPreliminaryDecision,
@@ -126,7 +140,7 @@ const App: React.FC = () => {
   };
   
   const handleAnalyzeConsistency = async (inputs: { jobInput: GeminiInput; resumeInput: GeminiInput; interviewTranscript: string; }) => {
-    if (!analysisResult || !inputs.interviewTranscript) return;
+    if (!analysisResult || !inputs.interviewTranscript || !llmService) return;
     await executeAnalysis(
       () => llmService.analyzeInterviewConsistency(inputs.jobInput, inputs.resumeInput, inputs.interviewTranscript, analysisResult.compatibilityGaps, language),
       setConsistencyResult,
@@ -135,7 +149,7 @@ const App: React.FC = () => {
   };
 
   const handleRewriteResume = async (inputs: { jobInput: GeminiInput; resumeInput: GeminiInput; }) => {
-    if (!analysisResult) return;
+    if (!analysisResult || !llmService) return;
     await executeAnalysis(
       () => llmService.rewriteResumeForJob(inputs.jobInput, inputs.resumeInput, language),
       setRewrittenResume,
@@ -190,7 +204,6 @@ const App: React.FC = () => {
                                 rewrittenResume={rewrittenResume}
                                 onGenerateDecision={handleGenerateDecision}
                                 onRewriteResume={handleRewriteResume}
-                                // onAnalyzeConsistency is handled inside InputSection state now
                                 isLoading={isLoading}
                                 activeAnalysis={activeAnalysis}
                             />

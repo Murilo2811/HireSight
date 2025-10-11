@@ -38,18 +38,19 @@ export interface LLMService {
 export const getLlmService = (config: LlmConfig): LLMService => {
     switch (config.provider) {
         case 'gemini':
+            if (!process.env.API_KEY) throw new Error('error.geminiKeyMissing');
             return new GeminiService(config.model);
         case 'openai':
-            if (!config.apiKeys.openai) throw new Error(`API Key for OpenAI is not set. Please add it in the settings.`);
+            if (!config.apiKeys.openai) throw new Error('error.openaiKeyMissing');
             return new OpenAIService(config.model, config.apiKeys.openai);
         case 'anthropic':
-            if (!config.apiKeys.anthropic) throw new Error(`API Key for Anthropic is not set. Please add it in the settings.`);
+            if (!config.apiKeys.anthropic) throw new Error('error.anthropicKeyMissing');
             return new AnthropicService(config.model, config.apiKeys.anthropic);
         case 'groq':
-             if (!config.apiKeys.groq) throw new Error(`API Key for Groq is not set. Please add it in the settings.`);
+             if (!config.apiKeys.groq) throw new Error('error.groqKeyMissing');
             return new GroqService(config.model, config.apiKeys.groq);
         default:
-            // Fallback to Gemini if provider is unknown
+            if (!process.env.API_KEY) throw new Error('error.geminiKeyMissing');
             return new GeminiService(config.model);
     }
 };
