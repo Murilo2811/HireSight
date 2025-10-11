@@ -33,7 +33,8 @@ export const DropdownMenuTrigger: React.FC<{ children: React.ReactNode, asChild?
       // The onClick handler now properly composes with any onClick prop on the child.
       return React.cloneElement(child as React.ReactElement<any>, {
           onClick: (event: React.MouseEvent<unknown>) => {
-              child.props.onClick?.(event);
+              // Fix: Cast props to `any` to handle `onClick` from child, preventing a TypeScript error where props is `unknown`.
+              (child.props as any).onClick?.(event);
               setOpen(o => !o);
           },
           'aria-expanded': true,

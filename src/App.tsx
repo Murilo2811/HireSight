@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useTranslations } from './contexts/LanguageContext';
-import { getLlmService, LLMService, GeminiInput } from './services/llmService';
-import { RecruiterAnalysisResult, ConsistencyAnalysisResult, PreliminaryDecisionResult, RewrittenResumeResult, LlmConfig, ApiKeys } from './types';
+import { getLlmService, GeminiInput } from './services/llmService';
+import { RecruiterAnalysisResult, ConsistencyAnalysisResult, PreliminaryDecisionResult, RewrittenResumeResult, LlmConfig } from './types';
 import { toast } from './components/ui/Toast';
 import AuthPage from './components/AuthPage';
 import Navbar from './components/sections/Navbar';
@@ -28,15 +28,17 @@ const App: React.FC = () => {
   });
 
   // LLM & API Key State
-  const [apiKeys, setApiKeys] = useState<ApiKeys>(() => {
+  const [llmConfig, setLlmConfig] = useState<LlmConfig>(() => {
     try {
-        const storedKeys = localStorage.getItem('hiresight_apikeys');
-        return storedKeys ? JSON.parse(storedKeys) : {};
-    } catch {
-        return {};
-    }
+        const storedConfig = localStorage.getItem('hiresight_settings');
+        if (storedConfig) {
+            return JSON.parse(storedConfig);
+        }
+    } catch {}
+    // Default config
+    return { provider: 'gemini', model: 'gemini-2.5-flash', apiKeys: {} };
   });
-  const [llmConfig, setLlmConfig] = useState<LlmConfig>({ provider: 'gemini', model: 'gemini-2.5-flash', apiKeys });
+
   const llmService = useMemo(() => getLlmService(llmConfig), [llmConfig]);
 
   // Analysis State
@@ -58,9 +60,8 @@ const App: React.FC = () => {
   }, [theme]);
   
   useEffect(() => {
-    setLlmConfig(prev => ({ ...prev, apiKeys }));
-    localStorage.setItem('hiresight_apikeys', JSON.stringify(apiKeys));
-  }, [apiKeys]);
+    localStorage.setItem('hiresight_settings', JSON.stringify(llmConfig));
+  }, [llmConfig]);
 
   // Handlers
   const handleAuthSuccess = (remember: boolean) => {
@@ -147,7 +148,7 @@ const App: React.FC = () => {
 
     switch (currentView) {
         case 'settings':
-            return <SettingsModal onNavigateBack={() => setCurrentView('app')} onSave={setApiKeys} initialKeys={apiKeys} />;
+            return <SettingsModal onNavigateBack={() => setCurrentView('app')} onSave={setLlmConfig} initialConfig={llmConfig} />;
         case 'profile':
              return <ProfilePage onNavigateBack={() => setCurrentView('app')} />;
         case 'app':
@@ -163,8 +164,6 @@ const App: React.FC = () => {
                         isLoading={isLoading && activeAnalysis === 'analyze'}
                         isLoggedIn={isAuthenticated}
                         onLoginClick={() => { /* Should not be called if authenticated */ }}
-                        llmConfig={llmConfig}
-                        onLlmConfigChange={setLlmConfig}
                     />
 
                     {isLoading && activeAnalysis === 'analyze' && (
