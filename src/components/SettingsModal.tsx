@@ -6,6 +6,7 @@ import { Button } from './ui/Button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/Card';
 import { Input } from './ui/Input';
 import { Label } from './ui/Label';
+import { toast } from './ui/Toast';
 
 interface SettingsModalProps {
     onNavigateBack: () => void;
@@ -19,6 +20,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onNavigateBack, onSave, i
 
     const handleSave = () => {
         onSave(keys);
+        toast.success(t('toast.success.saveSettings'))
         onNavigateBack();
     };
     
@@ -27,7 +29,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onNavigateBack, onSave, i
     };
 
     return (
-        <div className="bg-background text-foreground min-h-screen font-sans antialiased">
+        <div className="bg-background text-foreground min-h-screen font-sans antialiased animate-fade-in">
             <div className="container mx-auto px-4 py-8">
                  <header className="flex items-center mb-8">
                     <Button variant="outline" size="sm" onClick={onNavigateBack} className="mr-4">

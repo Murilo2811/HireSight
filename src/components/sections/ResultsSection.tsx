@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useTranslations } from '../../contexts/LanguageContext';
 import {
   RecruiterAnalysisResult,
@@ -21,7 +21,6 @@ interface ResultsSectionProps {
   consistencyResult: ConsistencyAnalysisResult | null;
   rewrittenResume: RewrittenResumeResult | null;
   onGenerateDecision: () => void;
-  onAnalyzeConsistency: (inputs: { jobInput: any; resumeInput: any; interviewTranscript: string; }) => void;
   onRewriteResume: (inputs: { jobInput: any; resumeInput: any; }) => void;
   isLoading: boolean;
   activeAnalysis: string | null;
@@ -74,20 +73,16 @@ const ResultsSection: React.FC<ResultsSectionProps> = ({
   consistencyResult,
   rewrittenResume,
   onGenerateDecision,
-  onAnalyzeConsistency,
   onRewriteResume,
   isLoading,
   activeAnalysis,
 }) => {
   const { t } = useTranslations();
   
-  // This is a simplification for the demo to pass data to re-analysis functions.
-  // In a real app, this data would be sourced from the state managed by InputSection.
-  const dummyInputs = {
+  const dummyInputs = useMemo(() => ({
       jobInput: { content: 'dummy job', format: 'text' as const },
       resumeInput: { content: 'dummy resume', format: 'text' as const },
-      interviewTranscript: 'dummy transcript'
-  }
+  }), []);
 
   const getScoreColorClass = (score: number) => {
     if (score >= 80) return 'text-green-500';
@@ -142,14 +137,10 @@ const ResultsSection: React.FC<ResultsSectionProps> = ({
         </Card>
         
         {/* Action Buttons */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Button size="lg" variant="outline" onClick={onGenerateDecision} disabled={isLoading}>
                  {isLoading && activeAnalysis === 'generateDecision' ? <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-current mr-2"></div> : <AwardIcon className="mr-2 h-5 w-5" />}
                 {t('results.actions.decision')}
-            </Button>
-            <Button size="lg" variant="outline" onClick={() => onAnalyzeConsistency(dummyInputs)} disabled={isLoading || !analysisResult.compatibilityGaps}>
-                {isLoading && activeAnalysis === 'analyzeConsistency' ? <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-current mr-2"></div> : <TrendingUpIcon className="mr-2 h-5 w-5" />}
-                {t('results.actions.consistency')}
             </Button>
             <Button size="lg" variant="outline" onClick={() => onRewriteResume(dummyInputs)} disabled={isLoading}>
                 {isLoading && activeAnalysis === 'rewriteResume' ? <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-current mr-2"></div> : <FileTextIcon className="mr-2 h-5 w-5" />}
@@ -159,7 +150,7 @@ const ResultsSection: React.FC<ResultsSectionProps> = ({
 
         {/* Dynamic Result Cards */}
         {preliminaryDecision && (
-             <Card>
+             <Card className="animate-fade-in">
                 <CardHeader><CardTitle>{t('decision.title')}</CardTitle></CardHeader>
                 <CardContent>
                     <Badge variant={preliminaryDecision.decision === 'Recommended for Interview' ? 'success' : 'danger'}>{preliminaryDecision.decision === 'Recommended for Interview' ? t('decision.recommended') : t('decision.notRecommended')}</Badge>
@@ -183,7 +174,7 @@ const ResultsSection: React.FC<ResultsSectionProps> = ({
         )}
         
         {consistencyResult && (
-             <Card>
+             <Card className="animate-fade-in">
                 <CardHeader><CardTitle>{t('consistency.title')}</CardTitle></CardHeader>
                 <CardContent className="divide-y divide-border -mt-6">
                     <ResultSection title={t('consistency.summary')}>
@@ -202,7 +193,7 @@ const ResultsSection: React.FC<ResultsSectionProps> = ({
         )}
         
         {rewrittenResume && (
-            <Card>
+            <Card className="animate-fade-in">
                 <CardHeader>
                     <div className="flex justify-between items-center">
                         <CardTitle>{t('rewrite.title')}</CardTitle>

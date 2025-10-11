@@ -1,1 +1,226 @@
-full contents of public/locales/en.json
+{
+  "appTitle": "HireSight",
+  "nav": {
+    "home": "Home",
+    "features": "Features",
+    "start": "Start Analyzing"
+  },
+  "auth": {
+    "login": {
+      "tab": "Log In",
+      "title": "Welcome Back",
+      "description": "Log in to your account to continue your talent analysis.",
+      "button": "Log In"
+    },
+    "signup": {
+      "tab": "Sign Up",
+      "title": "Create an Account",
+      "description": "Get started with HireSight in seconds.",
+      "button": "Create Account"
+    },
+    "emailLabel": "Email",
+    "passwordLabel": "Password",
+    "rememberMe": "Remember me"
+  },
+  "hero": {
+    "badge": "AI-Powered Recruitment",
+    "title": {
+      "line1": "Find the Perfect Fit,",
+      "line2": "Faster."
+    },
+    "subtitle": "HireSight leverages cutting-edge AI to deeply analyze resumes and job descriptions, providing you with unparalleled insights to make smarter, data-driven hiring decisions.",
+    "cta": {
+      "primary": "Get Started",
+      "secondary": "How It Works"
+    },
+    "stats": {
+        "stat1": {"value": "90%", "label": "Analysis Accuracy"},
+        "stat2": {"value": "75%", "label": "Time Saved"},
+        "stat3": {"value": "5k+", "label": "Analyses Performed"}
+    }
+  },
+  "features": {
+    "title": "Why Choose HireSight?",
+    "subtitle": "Our platform is designed to streamline your hiring process from start to finish.",
+    "advancedAI": {
+      "title": "Advanced AI Analysis",
+      "description": "Utilizes multiple state-of-the-art LLMs including Gemini, GPT-4o, and Claude 3 for nuanced and accurate insights."
+    },
+    "fastAnalysis": {
+      "title": "Instant, In-Depth Reports",
+      "description": "Go from job description to comprehensive candidate report in seconds, not hours."
+    },
+    "secureData": {
+      "title": "Data Privacy First",
+      "description": "Your data is yours. We provide a secure environment without storing your sensitive documents."
+    },
+    "compatibilityScore": {
+      "title": "Objective Scoring",
+      "description": "Get an unbiased, data-driven compatibility score to quickly rank and compare candidates."
+    },
+    "detailedReports": {
+      "title": "Actionable Insights",
+      "description": "Reports include skill gaps, culture fit analysis, and AI-generated interview questions."
+    },
+    "multipleAnalyses": {
+      "title": "Multi-Stage Analysis",
+      "description": "Analyze initial applications, generate pre-interview decisions, and assess interview consistency all in one place."
+    }
+  },
+  "input": {
+    "title": "Start Your Analysis",
+    "subtitle": "Provide the job, resume, and optional interview details below. Our AI will handle the rest.",
+    "job": {
+        "tab": "Job Description",
+        "placeholder": "Paste the full job description here...",
+        "urlPlaceholder": "https://example.com/job-posting"
+    },
+    "resume": {
+        "tab": "Candidate's Resume",
+        "placeholder": "Paste the candidate's full resume here..."
+    },
+    "interview": {
+        "tab": "Interview",
+        "label": "Interview Transcript (Optional)",
+        "placeholder": "Paste the full interview transcript here to enable consistency analysis...",
+        "info": "Providing a transcript allows for a deeper analysis of candidate consistency and soft skills."
+    },
+    "type": {
+        "text": "Paste Text",
+        "url": "From URL",
+        "file": "Upload File"
+    },
+    "button": {
+        "analyze": "Run Analysis",
+        "loading": "Analyzing..."
+    },
+    "loginPrompt": {
+        "text": "Please log in to run an analysis.",
+        "button": "Log In to Continue"
+    }
+  },
+  "results": {
+      "score": {
+          "high": "High Compatibility",
+          "medium": "Medium Compatibility",
+          "low": "Low Compatibility"
+      },
+      "overallScore": {
+          "title": "Overall Compatibility Score"
+      },
+      "actions": {
+          "decision": "Generate Decision",
+          "consistency": "Analyze Consistency",
+          "rewrite": "Rewrite Resume"
+      }
+  },
+  "analysis": {
+    "title": "Detailed Analysis Report",
+    "loading": "The AI is analyzing the documents, this may take a moment...",
+    "placeholder": "Your analysis report will appear here once the analysis is complete.",
+    "overallFit": "Overall Fit",
+    "summary": "AI Summary",
+    "fitExplanation": "Fit Explanation",
+    "compatibilityGaps": "Compatibility Gaps",
+    "keyResponsibilities": "Key Responsibilities Match",
+    "requiredSkills": "Required Skills Match",
+    "niceToHaveSkills": "Nice-to-Have Skills Match",
+    "redFlags": "Potential Red Flags",
+    "interviewQuestions": "Suggested Interview Questions",
+    "companyCulture": "Company Culture Fit",
+    "salaryAndBenefits": "Salary & Benefits Analysis"
+  },
+  "decision": {
+    "title": "Preliminary Decision",
+    "pros": "Pros for Interviewing",
+    "cons": "Cons Against Interviewing",
+    "explanation": "Justification",
+    "recommended": "Recommended for Interview",
+    "notRecommended": "Not Recommended"
+  },
+  "rewrite": {
+    "title": "AI-Optimized Resume",
+    "loading": "Rewriting resume..."
+  },
+  "consistency": {
+    "title": "Interview Consistency Analysis",
+    "placeholder": "Paste the full interview transcript here...",
+    "loading": "Analyzing interview consistency...",
+    "consistencyScore": "Consistency Score",
+    "missingFromInterview": "From Resume, Missing in Interview",
+    "newInInterview": "New Relevant Information from Interview",
+    "none": "None identified.",
+    "summary": "Narrative Summary",
+    "recommendation": "Final Recommendation",
+    "softSkillsAnalysis": "Soft Skills Analysis",
+    "inconsistencies": "Inconsistencies & Contradictions",
+    "prosForHiring": "Pros for Hiring",
+    "consForHiring": "Cons for Hiring",
+    "updatedOverallFit": "Updated Overall Fit",
+    "hiringDecision": "Final Hiring Decision",
+    "preliminaryHiringDecision": "Preliminary Hiring Verdict",
+    "recommended": "Recommended for Hire",
+    "notRecommended": "Not Recommended",
+    "gapResolutions": "Gap Resolutions",
+    "gapLabel": "Gap"
+  },
+  "status": {
+    "match": "Match",
+    "partial": "Partial",
+    "nomatch": "No Match"
+  },
+  "buttons": {
+      "back": "Back",
+      "save": "Save",
+      "cancel": "Cancel",
+      "downloadResume": "Download Resume"
+  },
+  "settings": {
+    "title": "Settings",
+    "subtitle": "Manage API Keys",
+    "description": "Your API keys are stored securely in your browser's local storage and are never sent to our servers. Leave a field blank if you don't use that provider.",
+    "openaiKey": "API key for models like GPT-4o.",
+    "anthropicKey": "API key for Claude models.",
+    "groqKey": "API key for LLaMA and Mixtral models on Groq.",
+    "keyPlaceholder": "Enter your API key...",
+    "aiProvider": {
+        "title": "AI Model Configuration",
+        "description": "Select the provider and model you wish to use for the analysis. Some providers require an API key in the settings.",
+        "providerLabel": "AI Provider",
+        "modelLabel": "Model"
+    }
+  },
+  "profile": {
+    "title": "My Profile",
+    "subtitle": "Manage your account information.",
+    "name": "Full Name",
+    "email": "Email Address",
+    "company": "Company (Optional)",
+    "role": "Your Role (Optional)",
+    "updateButton": "Update Profile",
+    "changePassword": "Change Password"
+  },
+  "userNav": {
+    "profile": "Profile",
+    "settings": "Settings",
+    "logout": "Log Out"
+  },
+  "error": {
+    "title": "An Error Occurred",
+    "jobDescriptionMissing": "Job description is missing.",
+    "resumeMissing": "Resume is missing.",
+    "unknown": "An unknown error occurred. Please check the console for details.",
+    "boundaryTitle": "Something went wrong",
+    "boundaryMessage": "We're sorry, but the application encountered an unexpected error. Please try refreshing the page.",
+    "boundaryDetails": "Error Details"
+  },
+  "toast": {
+      "success": {
+        "analyze": "Analysis complete!",
+        "generateDecision": "Decision generated successfully.",
+        "analyzeConsistency": "Consistency analysis complete.",
+        "rewriteResume": "Resume rewritten successfully.",
+        "saveSettings": "Settings saved successfully!"
+      }
+  }
+}

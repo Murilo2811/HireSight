@@ -10,6 +10,7 @@ import { BriefcaseIcon, FileTextIcon, MicIcon, UploadIcon, GlobeIcon } from '../
 import { parseDocumentFile, parseUrlContent } from '../../utils/parsers';
 import { LlmConfig, LlmProvider } from '../../types';
 import { Select } from '../ui/Select';
+import { toast } from '../ui/Toast';
 
 
 type InputType = 'text' | 'url' | 'file';
@@ -93,6 +94,8 @@ const InputSection = forwardRef<HTMLDivElement, InputSectionProps>(
         const resumeInput = await getResumeInput();
         onAnalyze({ jobInput, resumeInput, interviewTranscript });
       } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        toast.error(errorMessage);
         console.error("Error parsing inputs:", error);
       }
     };
@@ -125,7 +128,7 @@ const InputSection = forwardRef<HTMLDivElement, InputSectionProps>(
                     <Select
                         id="provider-select"
                         value={llmConfig.provider}
-                        onInput={(e) => handleProviderChange((e.target as HTMLSelectElement).value as LlmProvider)}
+                        onChange={(e) => handleProviderChange((e.target as HTMLSelectElement).value as LlmProvider)}
                     >
                         {Object.keys(AVAILABLE_MODELS).map(provider => (
                             <option key={provider} value={provider} className="capitalize">{provider}</option>
@@ -137,7 +140,7 @@ const InputSection = forwardRef<HTMLDivElement, InputSectionProps>(
                     <Select
                         id="model-select"
                         value={llmConfig.model}
-                        onInput={(e) => handleModelChange((e.target as HTMLSelectElement).value)}
+                        onChange={(e) => handleModelChange((e.target as HTMLSelectElement).value)}
                         disabled={!llmConfig.provider}
                     >
                        {AVAILABLE_MODELS[llmConfig.provider]?.map(model => (
@@ -171,7 +174,7 @@ const InputSection = forwardRef<HTMLDivElement, InputSectionProps>(
                   </div>
                   {jobInputType === 'text' && <Textarea value={jobDescriptionText} onChange={e => setJobDescriptionText(e.target.value)} placeholder={t('input.job.placeholder')} className="h-72" />}
                   {jobInputType === 'url' && <Input type="url" value={jobDescriptionUrl} onChange={e => setJobDescriptionUrl(e.target.value)} placeholder={t('input.job.urlPlaceholder')} />}
-                  {jobInputType === 'file' && <Input type="file" onChange={e => setJobDescriptionFile(e.target.files?.[0] || null)} accept=".txt,.pdf,.doc,.docx" />}
+                  {jobInputType === 'file' && <Input type="file" onChange={e => setJobDescriptionFile(e.target.files?.[0] || null)} accept=".pdf,.docx" />}
                 </TabsContent>
 
                 {/* Resume Tab */}
@@ -185,7 +188,7 @@ const InputSection = forwardRef<HTMLDivElement, InputSectionProps>(
                     </Tabs>
                   </div>
                    {resumeInputType === 'text' && <Textarea value={resumeText} onChange={e => setResumeText(e.target.value)} placeholder={t('input.resume.placeholder')} className="h-72" />}
-                   {resumeInputType === 'file' && <Input type="file" onChange={e => setResumeFile(e.target.files?.[0] || null)} accept=".txt,.pdf,.doc,.docx" />}
+                   {resumeInputType === 'file' && <Input type="file" onChange={e => setResumeFile(e.target.files?.[0] || null)} accept=".pdf,.docx" />}
                 </TabsContent>
 
                 {/* Interview Tab */}

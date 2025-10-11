@@ -19,7 +19,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    // Simula uma chamada de API de autenticação
+    // Simulate an API call for authentication
     setTimeout(() => {
       setIsLoading(false);
       onAuthSuccess(rememberMe);
@@ -27,7 +27,7 @@ const AuthPage: React.FC<AuthPageProps> = ({ onAuthSuccess }) => {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-background p-4">
+    <div className="flex items-center justify-center min-h-screen bg-background p-4 animate-fade-in">
       <div className="w-full max-w-md">
         <div className="flex justify-center mb-6">
           <EyeIcon className="h-10 w-10 text-primary" />

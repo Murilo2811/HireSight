@@ -11,7 +11,7 @@ import { AnthropicService } from './anthropicService';
 import { GroqService } from './groqService';
 
 /**
- * Defines the structure for inputs passed to Gemini, supporting both raw text and file data.
+ * Defines the structure for inputs passed to the services.
  */
 export type GeminiInput = {
     content: string | { data: string; mimeType: string };
@@ -20,15 +20,11 @@ export type GeminiInput = {
 
 /**
  * Helper to build a content part for the Gemini API, handling both text and file data.
- * This is generalized for text extraction for all services.
  */
 export const buildContentPart = (input: GeminiInput) => {
     if (input.format === 'file' && typeof input.content !== 'string') {
-        // This is for file-based input, like PDFs. File content is not directly used by non-Gemini services.
-        // It's assumed to be pre-parsed into text before reaching this stage for other providers.
         return { inlineData: input.content };
     }
-    // This is for text-based input.
     return { text: input.content as string };
 };
 
@@ -53,6 +49,7 @@ export const getLlmService = (config: LlmConfig): LLMService => {
              if (!config.apiKeys.groq) throw new Error(`API Key for Groq is not set. Please add it in the settings.`);
             return new GroqService(config.model, config.apiKeys.groq);
         default:
-            throw new Error(`Unsupported LLM provider: ${config.provider}`);
+            // Fallback to Gemini if provider is unknown
+            return new GeminiService(config.model);
     }
 };

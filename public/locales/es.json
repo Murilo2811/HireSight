@@ -1,1 +1,226 @@
-full contents of public/locales/es.json
+{
+  "appTitle": "HireSight",
+  "nav": {
+    "home": "Inicio",
+    "features": "Características",
+    "start": "Empezar Análisis"
+  },
+  "auth": {
+    "login": {
+      "tab": "Iniciar Sesión",
+      "title": "Bienvenido de Nuevo",
+      "description": "Inicia sesión en tu cuenta para continuar con tu análisis de talento.",
+      "button": "Iniciar Sesión"
+    },
+    "signup": {
+      "tab": "Registrarse",
+      "title": "Crear una Cuenta",
+      "description": "Empieza a usar HireSight en segundos.",
+      "button": "Crear Cuenta"
+    },
+    "emailLabel": "Correo Electrónico",
+    "passwordLabel": "Contraseña",
+    "rememberMe": "Recordarme"
+  },
+  "hero": {
+    "badge": "Reclutamiento con IA",
+    "title": {
+      "line1": "Encuentra al Candidato Perfecto,",
+      "line2": "Más Rápido."
+    },
+    "subtitle": "HireSight utiliza IA de vanguardia para analizar en profundidad currículos y descripciones de trabajo, brindándote conocimientos inigualables para tomar decisiones de contratación más inteligentes y basadas en datos.",
+    "cta": {
+      "primary": "Comenzar",
+      "secondary": "Cómo Funciona"
+    },
+    "stats": {
+        "stat1": {"value": "90%", "label": "Precisión del Análisis"},
+        "stat2": {"value": "75%", "label": "Tiempo Ahorrado"},
+        "stat3": {"value": "5k+", "label": "Análisis Realizados"}
+    }
+  },
+  "features": {
+    "title": "¿Por Qué Elegir HireSight?",
+    "subtitle": "Nuestra plataforma está diseñada para optimizar tu proceso de contratación de principio a fin.",
+    "advancedAI": {
+      "title": "Análisis Avanzado de IA",
+      "description": "Utiliza múltiples LLMs de última generación, incluidos Gemini, GPT-4o y Claude 3, para obtener conocimientos matizados y precisos."
+    },
+    "fastAnalysis": {
+      "title": "Informes Instantáneos y Detallados",
+      "description": "Pasa de la descripción del trabajo a un informe completo del candidato en segundos, no en horas."
+    },
+    "secureData": {
+      "title": "La Privacidad es lo Primero",
+      "description": "Tus datos son tuyos. Ofrecemos un entorno seguro sin almacenar tus documentos confidenciales."
+    },
+    "compatibilityScore": {
+      "title": "Puntuación Objetiva",
+      "description": "Obtén una puntuación de compatibilidad imparcial y basada en datos para clasificar y comparar candidatos rápidamente."
+    },
+    "detailedReports": {
+      "title": "Información Accionable",
+      "description": "Los informes incluyen brechas de habilidades, análisis de ajuste cultural y preguntas de entrevista generadas por IA."
+    },
+    "multipleAnalyses": {
+      "title": "Análisis Multi-Etapa",
+      "description": "Analiza solicitudes iniciales, genera decisiones previas a la entrevista y evalúa la coherencia de la entrevista, todo en un solo lugar."
+    }
+  },
+  "input": {
+    "title": "Inicia tu Análisis",
+    "subtitle": "Proporciona los detalles del trabajo, el currículum y, opcionalmente, la entrevista a continuación. Nuestra IA se encargará del resto.",
+    "job": {
+        "tab": "Descripción del Trabajo",
+        "placeholder": "Pega la descripción completa del trabajo aquí...",
+        "urlPlaceholder": "https://ejemplo.com/oferta-de-trabajo"
+    },
+    "resume": {
+        "tab": "Currículum del Candidato",
+        "placeholder": "Pega el currículum completo del candidato aquí..."
+    },
+    "interview": {
+        "tab": "Entrevista",
+        "label": "Transcripción de la Entrevista (Opcional)",
+        "placeholder": "Pega la transcripción completa de la entrevista aquí para habilitar el análisis de coherencia...",
+        "info": "Proporcionar una transcripción permite un análisis más profundo de la coherencia y las habilidades blandas del candidato."
+    },
+    "type": {
+        "text": "Pegar Texto",
+        "url": "Desde URL",
+        "file": "Subir Archivo"
+    },
+    "button": {
+        "analyze": "Ejecutar Análisis",
+        "loading": "Analizando..."
+    },
+    "loginPrompt": {
+        "text": "Por favor, inicia sesión para ejecutar un análisis.",
+        "button": "Iniciar Sesión para Continuar"
+    }
+  },
+  "results": {
+      "score": {
+          "high": "Alta Compatibilidad",
+          "medium": "Compatibilidad Media",
+          "low": "Baja Compatibilidad"
+      },
+      "overallScore": {
+          "title": "Puntuación de Compatibilidad General"
+      },
+      "actions": {
+          "decision": "Generar Decisión",
+          "consistency": "Analizar Coherencia",
+          "rewrite": "Reescribir Currículum"
+      }
+  },
+  "analysis": {
+    "title": "Informe de Análisis Detallado",
+    "loading": "La IA está analizando los documentos, esto puede tardar un momento...",
+    "placeholder": "Tu informe de análisis aparecerá aquí una vez que se complete el análisis.",
+    "overallFit": "Compatibilidad General",
+    "summary": "Resumen de la IA",
+    "fitExplanation": "Explicación de la Compatibilidad",
+    "compatibilityGaps": "Brechas de Compatibilidad",
+    "keyResponsibilities": "Coincidencia de Responsabilidades Clave",
+    "requiredSkills": "Coincidencia de Habilidades Requeridas",
+    "niceToHaveSkills": "Coincidencia de Habilidades Deseables",
+    "redFlags": "Posibles Señales de Alerta",
+    "interviewQuestions": "Preguntas Sugeridas para la Entrevista",
+    "companyCulture": "Ajuste con la Cultura de la Empresa",
+    "salaryAndBenefits": "Análisis de Salario y Beneficios"
+  },
+  "decision": {
+    "title": "Decisión Preliminar",
+    "pros": "Pros para Entrevistar",
+    "cons": "Contras para Entrevistar",
+    "explanation": "Justificación",
+    "recommended": "Recomendado para Entrevista",
+    "notRecommended": "No Recomendado"
+  },
+  "rewrite": {
+    "title": "Currículum Optimizado por IA",
+    "loading": "Reescribiendo currículum..."
+  },
+  "consistency": {
+    "title": "Análisis de Coherencia de la Entrevista",
+    "placeholder": "Pega la transcripción completa de la entrevista aquí...",
+    "loading": "Analizando la coherencia de la entrevista...",
+    "consistencyScore": "Puntuación de Coherencia",
+    "missingFromInterview": "Del Currículum, Ausente en la Entrevista",
+    "newInInterview": "Nueva Información Relevante de la Entrevista",
+    "none": "No se identificaron elementos.",
+    "summary": "Resumen Narrativo",
+    "recommendation": "Recomendación Final",
+    "softSkillsAnalysis": "Análisis de Habilidades Blandas",
+    "inconsistencies": "Inconsistencias y Contradicciones",
+    "prosForHiring": "Pros para Contratar",
+    "consForHiring": "Contras para Contratar",
+    "updatedOverallFit": "Compatibilidad General Actualizada",
+    "hiringDecision": "Decisión Final de Contratación",
+    "preliminaryHiringDecision": "Veredicto Preliminar de Contratación",
+    "recommended": "Recomendado para Contratación",
+    "notRecommended": "No Recomendado",
+    "gapResolutions": "Resolución de Brechas",
+    "gapLabel": "Brecha"
+  },
+  "status": {
+    "match": "Coincide",
+    "partial": "Parcial",
+    "nomatch": "No Coincide"
+  },
+  "buttons": {
+    "back": "Volver",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "downloadResume": "Descargar Currículum"
+  },
+  "settings": {
+    "title": "Configuración",
+    "subtitle": "Gestionar Claves de API",
+    "description": "Tus claves de API se almacenan de forma segura en el almacenamiento local de tu navegador y nunca se envían a nuestros servidores. Deja un campo en blanco si no usas ese proveedor.",
+    "openaiKey": "Clave de API para modelos como GPT-4o.",
+    "anthropicKey": "Clave de API para modelos de Claude.",
+    "groqKey": "Clave de API para modelos LLaMA y Mixtral en Groq.",
+    "keyPlaceholder": "Introduce tu clave de API...",
+    "aiProvider": {
+        "title": "Configuración del Modelo de IA",
+        "description": "Selecciona el proveedor y el modelo que deseas usar para el análisis. Algunos proveedores requieren una clave de API en la configuración.",
+        "providerLabel": "Proveedor de IA",
+        "modelLabel": "Modelo"
+    }
+  },
+  "profile": {
+    "title": "Mi Perfil",
+    "subtitle": "Gestiona la información de tu cuenta.",
+    "name": "Nombre Completo",
+    "email": "Dirección de Correo Electrónico",
+    "company": "Empresa (Opcional)",
+    "role": "Tu Cargo (Opcional)",
+    "updateButton": "Actualizar Perfil",
+    "changePassword": "Cambiar Contraseña"
+  },
+  "userNav": {
+    "profile": "Perfil",
+    "settings": "Configuración",
+    "logout": "Cerrar Sesión"
+  },
+  "error": {
+    "title": "Ocurrió un Error",
+    "jobDescriptionMissing": "Falta la descripción del trabajo.",
+    "resumeMissing": "Falta el currículum.",
+    "unknown": "Ocurrió un error desconocido. Por favor, revisa la consola para más detalles.",
+    "boundaryTitle": "Algo salió mal",
+    "boundaryMessage": "Lo sentimos, pero la aplicación encontró un error inesperado. Por favor, intenta refrescar la página.",
+    "boundaryDetails": "Detalles del Error"
+  },
+  "toast": {
+      "success": {
+        "analyze": "¡Análisis completo!",
+        "generateDecision": "Decisión generada con éxito.",
+        "analyzeConsistency": "Análisis de coherencia completo.",
+        "rewriteResume": "Currículum reescrito con éxito.",
+        "saveSettings": "¡Configuración guardada con éxito!"
+      }
+  }
+}

@@ -19,14 +19,12 @@ interface TabsProps {
   defaultValue: string;
   children: React.ReactNode;
   className?: string;
-  // FIX: Added onValueChange to the props interface to allow parent components to react to tab changes.
   onValueChange?: (value: string) => void;
 }
 
 const Tabs: React.FC<TabsProps> = ({ defaultValue, children, className, onValueChange }) => {
   const [activeTab, setActiveTab] = useState(defaultValue);
   
-  // FIX: Created a handler to call both the internal state setter and the external callback.
   const handleSetActiveTab = (value: string) => {
     setActiveTab(value);
     if (onValueChange) {

@@ -27,7 +27,6 @@ const buttonVariants = cva(
   }
 );
 
-// FIX: Changed interface to type to fix issue with VariantProps inference for `variant` and `size`.
 export type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & VariantProps<typeof buttonVariants>;
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(

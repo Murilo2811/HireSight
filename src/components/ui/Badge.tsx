@@ -21,7 +21,6 @@ const badgeVariants = cva(
   }
 );
 
-// FIX: Changed interface to type to fix issue with VariantProps inference.
 export type BadgeProps = React.HTMLAttributes<HTMLDivElement> & VariantProps<typeof badgeVariants>;
 
 function Badge({ className, variant, ...props }: BadgeProps) {

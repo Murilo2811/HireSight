@@ -21,7 +21,14 @@ const getInitialLanguage = (): Language => {
 };
 
 export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [language, setLanguage] = useState<Language>(getInitialLanguage());
+  const [language, setLanguage] = useState<Language>(() => {
+    const savedLang = localStorage.getItem('language');
+    if (savedLang === 'en' || savedLang === 'pt' || savedLang === 'es') {
+        return savedLang;
+    }
+    return getInitialLanguage();
+  });
+  
   const [translations, setTranslations] = useState<{ en: Translations, pt: Translations, es: Translations }>({ en: {}, pt: {}, es: {} });
   const [isLoading, setIsLoading] = useState(true);
 
@@ -49,9 +56,21 @@ export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }
     fetchTranslations();
   }, []);
 
+  const handleSetLanguage = (lang: Language) => {
+    setLanguage(lang);
+    localStorage.setItem('language', lang);
+  }
+
   const t = (key: string): string => {
     const langTranslations = translations[language];
-    return langTranslations?.[key] || key;
+    // Simple dot notation traversal
+    const keys = key.split('.');
+    let result: any = langTranslations;
+    for (const k of keys) {
+        result = result?.[k];
+        if (result === undefined) return key;
+    }
+    return result || key;
   };
   
   if (isLoading) {
@@ -63,7 +82,7 @@ export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }
   }
 
   return (
-    <LanguageContext.Provider value={{ language, setLanguage, t }}>
+    <LanguageContext.Provider value={{ language, setLanguage: handleSetLanguage, t }}>
       {children}
     </LanguageContext.Provider>
   );

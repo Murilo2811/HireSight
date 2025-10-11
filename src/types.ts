@@ -1,4 +1,3 @@
-// FIX: Replaced placeholder content with the actual type definitions.
 export type MatchStatus = 'Match' | 'Partial' | 'No Match';
 
 export type MatchedItem = {
@@ -63,8 +62,25 @@ export type ConsistencyAnalysisResult = {
   consForHiring: string[];
   updatedOverallFitScore: number;
   hiringDecision: 'Recommended for Hire' | 'Not Recommended';
+  preliminaryHiringDecision: 'Likely Hire' | 'Unlikely Hire' | 'More Information Needed';
 };
 
 export type RewrittenResumeResult = {
   rewrittenResume: string;
+};
+
+// --- New Types for Multi-LLM Support ---
+
+export type LlmProvider = 'gemini' | 'openai' | 'anthropic' | 'groq';
+
+export type ApiKeys = {
+    openai?: string;
+    anthropic?: string;
+    groq?: string;
+};
+
+export type LlmConfig = {
+    provider: LlmProvider;
+    model: string;
+    apiKeys: ApiKeys;
 };
