@@ -3,8 +3,6 @@ import {
     PreliminaryDecisionResult,
     ConsistencyAnalysisResult,
     RewrittenResumeResult,
-    LlmProvider,
-    ApiKeys,
     LlmConfig,
 } from '../types';
 import { GeminiService } from './geminiService';
@@ -40,8 +38,6 @@ export interface LLMService {
     analyzeInterviewConsistency(jobInput: GeminiInput, resumeInput: GeminiInput, interviewTranscript: string, compatibilityGaps: string[], language: string): Promise<ConsistencyAnalysisResult>;
     rewriteResumeForJob(jobInput: GeminiInput, resumeInput: GeminiInput, language: string): Promise<RewrittenResumeResult>;
 }
-
-export { ApiKeys, LlmConfig };
 
 export const getLlmService = (config: LlmConfig): LLMService => {
     switch (config.provider) {

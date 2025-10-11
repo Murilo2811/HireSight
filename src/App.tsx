@@ -5,8 +5,10 @@ import {
   ConsistencyAnalysisResult,
   PreliminaryDecisionResult,
   RewrittenResumeResult,
+  LlmConfig,
+  ApiKeys,
 } from './types';
-import { getLlmService, LlmConfig, ApiKeys } from './services/llmService';
+import { getLlmService } from './services/llmService';
 
 // Importa as novas seções
 import Navbar from './components/sections/Navbar';
