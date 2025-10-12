@@ -1,5 +1,33 @@
 import mammoth from 'mammoth';
 import { Readability } from '@mozilla/readability';
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+
+// Declare jspdf and html2canvas as they are loaded from a script tag, not imported.
+declare const jspdf: any;
+declare const html2canvas: any;
+
+const loadedScripts: { [src: string]: Promise<void> } = {};
+const loadScript = (src: string): Promise<void> => {
+    if (!loadedScripts[src]) {
+        loadedScripts[src] = new Promise((resolve, reject) => {
+            if (document.querySelector(`script[src="${src}"]`)) {
+                resolve();
+                return;
+            }
+            const script = document.createElement('script');
+            script.src = src;
+            script.onload = () => resolve();
+            script.onerror = () => {
+                delete loadedScripts[src]; // Allow retrying
+                reject(new Error(`Failed to load script: ${src}`));
+            };
+            document.head.appendChild(script);
+        });
+    }
+    return loadedScripts[src];
+};
+
 
 const fileToBase64 = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
@@ -108,4 +136,65 @@ export const downloadFile = (content: string, filename: string, mimeType: string
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+};
+
+export const downloadComponentAsPdf = async (component: React.ReactElement, filename: string) => {
+    await Promise.all([
+        loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js'),
+        loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js')
+    ]);
+
+    const container = document.createElement('div');
+    container.style.position = 'absolute';
+    container.style.left = '-9999px';
+    container.style.width = '1024px';
+    // Inherit dark/light theme from the main document
+    container.className = document.documentElement.className;
+
+    document.body.appendChild(container);
+    
+    const root = ReactDOM.createRoot(container);
+    root.render(component);
+
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    const canvas = await html2canvas(container, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: (container.classList.contains('dark')) ? '#09090b' : '#ffffff',
+    });
+
+    root.unmount();
+    document.body.removeChild(container);
+
+    const imgData = canvas.toDataURL('image/png');
+    const pdf = new jspdf.jsPDF({
+        orientation: 'p',
+        unit: 'px',
+        format: 'a4',
+        hotfixes: ['px_scaling'],
+    });
+
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = pdf.internal.pageSize.getHeight();
+    const canvasWidth = canvas.width;
+    const canvasHeight = canvas.height;
+    const ratio = canvasWidth / pdfWidth;
+    const imgHeight = canvasHeight / ratio;
+    
+    let heightLeft = imgHeight;
+    let position = 0;
+
+    pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
+    heightLeft -= pdfHeight;
+
+    while (heightLeft > 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
+        heightLeft -= pdfHeight;
+    }
+
+    pdf.save(filename);
 };

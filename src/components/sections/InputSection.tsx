@@ -5,16 +5,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/Tabs';
 import { Button } from '../ui/Button';
 import { Textarea } from '../ui/Textarea';
 import { Input } from '../ui/Input';
-import { Label } from '../ui/Label';
-import { BriefcaseIcon, FileTextIcon, MicIcon, UploadIcon, GlobeIcon } from '../icons';
+import { BriefcaseIcon, FileTextIcon, UploadIcon, GlobeIcon } from '../icons';
 import { parseDocumentFile, parseUrlContent } from '../../utils/parsers';
 import { toast } from '../ui/Toast';
-
 
 type InputType = 'text' | 'url' | 'file';
 
 interface InputSectionProps {
-  onAnalyze: (inputs: { jobInput: any; resumeInput: any; interviewTranscript?: string }) => void;
+  onAnalyze: (inputs: { jobInput: any; resumeInput: any; }) => void;
   isLoading: boolean;
   isLoggedIn: boolean;
   onLoginClick: () => void;
@@ -34,9 +32,6 @@ const InputSection = forwardRef<HTMLDivElement, InputSectionProps>(
     const [resumeInputType, setResumeInputType] = useState<Omit<InputType, 'url'>>('text');
     const [resumeText, setResumeText] = useState('');
     const [resumeFile, setResumeFile] = useState<File | null>(null);
-
-    // State for Interview Transcript
-    const [interviewTranscript, setInterviewTranscript] = useState('');
 
     const isAnalyzeDisabled =
       isLoading ||
@@ -67,7 +62,7 @@ const InputSection = forwardRef<HTMLDivElement, InputSectionProps>(
       try {
         const jobInput = await getJobInput();
         const resumeInput = await getResumeInput();
-        onAnalyze({ jobInput, resumeInput, interviewTranscript });
+        onAnalyze({ jobInput, resumeInput });
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
         toast.error(errorMessage);
@@ -86,10 +81,9 @@ const InputSection = forwardRef<HTMLDivElement, InputSectionProps>(
           <Card className="border-2 shadow-lg animate-slide-up">
             <Tabs defaultValue="job">
               <CardHeader>
-                <TabsList className="grid w-full grid-cols-3">
+                <TabsList className="grid w-full grid-cols-2">
                   <TabsTrigger value="job"><BriefcaseIcon className="mr-2 h-4 w-4" />{t('input.job.tab')}</TabsTrigger>
                   <TabsTrigger value="resume"><FileTextIcon className="mr-2 h-4 w-4" />{t('input.resume.tab')}</TabsTrigger>
-                  <TabsTrigger value="interview"><MicIcon className="mr-2 h-4 w-4" />{t('input.interview.tab')}</TabsTrigger>
                 </TabsList>
               </CardHeader>
               <CardContent>
@@ -121,13 +115,6 @@ const InputSection = forwardRef<HTMLDivElement, InputSectionProps>(
                   </div>
                    {resumeInputType === 'text' && <Textarea value={resumeText} onChange={e => setResumeText(e.target.value)} placeholder={t('input.resume.placeholder')} className="h-72" />}
                    {resumeInputType === 'file' && <Input type="file" onChange={e => setResumeFile(e.target.files?.[0] || null)} accept=".pdf,.docx" />}
-                </TabsContent>
-
-                {/* Interview Tab */}
-                <TabsContent value="interview">
-                    <Label htmlFor="interview-transcript" className="text-muted-foreground">{t('input.interview.label')}</Label>
-                    <Textarea id="interview-transcript" value={interviewTranscript} onChange={e => setInterviewTranscript(e.target.value)} placeholder={t('input.interview.placeholder')} className="h-72 mt-2" />
-                    <p className="text-xs text-muted-foreground mt-2">{t('input.interview.info')}</p>
                 </TabsContent>
               </CardContent>
             </Tabs>

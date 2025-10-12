@@ -12,6 +12,8 @@ import ResultsSection from './components/sections/ResultsSection';
 import SettingsModal from './components/SettingsModal';
 import ProfilePage from './components/ProfilePage';
 import LoadingSpinner from './components/LoadingSpinner';
+import { downloadComponentAsPdf } from './utils/parsers';
+import PrintableReport from './components/PrintableReport';
 
 type AppView = 'landing' | 'app' | 'settings' | 'profile';
 
@@ -54,9 +56,12 @@ const App: React.FC = () => {
   const [preliminaryDecision, setPreliminaryDecision] = useState<PreliminaryDecisionResult | null>(null);
   const [consistencyResult, setConsistencyResult] = useState<ConsistencyAnalysisResult | null>(null);
   const [rewrittenResume, setRewrittenResume] = useState<RewrittenResumeResult | null>(null);
+  const [interviewTranscript, setInterviewTranscript] = useState('');
+  const [lastAnalysisInputs, setLastAnalysisInputs] = useState<{ jobInput: GeminiInput; resumeInput: GeminiInput } | null>(null);
   
   const [isLoading, setIsLoading] = useState(false);
   const [activeAnalysis, setActiveAnalysis] = useState<string | null>(null);
+  const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const resultsRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLDivElement>(null);
@@ -105,6 +110,7 @@ const App: React.FC = () => {
       const result = await analysisFn();
       stateSetter(result);
       toast.success(t(`toast.success.${analysisType}`));
+      return result; // Return result for chaining
     } catch (e) {
       const errorMessage = e instanceof Error ? e.message : 'error.unknown';
       setError(t(errorMessage));
@@ -115,19 +121,22 @@ const App: React.FC = () => {
     }
   };
 
-  const handleAnalyze = async (inputs: { jobInput: GeminiInput; resumeInput: GeminiInput; interviewTranscript?: string }) => {
+  const handleAnalyze = async (inputs: { jobInput: GeminiInput; resumeInput: GeminiInput; }) => {
     if (!llmService) return;
     setAnalysisResult(null);
     setPreliminaryDecision(null);
     setConsistencyResult(null);
     setRewrittenResume(null);
 
-    await executeAnalysis(
+    const result = await executeAnalysis(
       () => llmService.analyzeForRecruiter(inputs.jobInput, inputs.resumeInput, language),
       setAnalysisResult,
       'analyze'
     );
-    resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if(result) {
+        setLastAnalysisInputs({ jobInput: inputs.jobInput, resumeInput: inputs.resumeInput });
+        resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
   };
   
   const handleGenerateDecision = async () => {
@@ -139,22 +148,45 @@ const App: React.FC = () => {
     );
   };
   
-  const handleAnalyzeConsistency = async (inputs: { jobInput: GeminiInput; resumeInput: GeminiInput; interviewTranscript: string; }) => {
-    if (!analysisResult || !inputs.interviewTranscript || !llmService) return;
+  const handleAnalyzeConsistency = async () => {
+    if (!analysisResult || !interviewTranscript || !llmService || !lastAnalysisInputs) return;
     await executeAnalysis(
-      () => llmService.analyzeInterviewConsistency(inputs.jobInput, inputs.resumeInput, inputs.interviewTranscript, analysisResult.compatibilityGaps, language),
+      () => llmService.analyzeInterviewConsistency(lastAnalysisInputs.jobInput, lastAnalysisInputs.resumeInput, interviewTranscript, analysisResult.compatibilityGaps, language),
       setConsistencyResult,
       'analyzeConsistency'
     );
   };
 
-  const handleRewriteResume = async (inputs: { jobInput: GeminiInput; resumeInput: GeminiInput; }) => {
-    if (!analysisResult || !llmService) return;
+  const handleRewriteResume = async () => {
+    if (!lastAnalysisInputs || !llmService) return;
     await executeAnalysis(
-      () => llmService.rewriteResumeForJob(inputs.jobInput, inputs.resumeInput, language),
+      () => llmService.rewriteResumeForJob(lastAnalysisInputs.jobInput, lastAnalysisInputs.resumeInput, language),
       setRewrittenResume,
       'rewriteResume'
     );
+  };
+
+  const handleDownloadPdf = async () => {
+    if (!analysisResult) return;
+    setIsDownloadingPdf(true);
+    try {
+        const reportComponent = (
+            <PrintableReport
+                t={t}
+                analysisResult={analysisResult}
+                preliminaryDecision={preliminaryDecision}
+                consistencyResult={consistencyResult}
+                rewrittenResume={rewrittenResume}
+            />
+        );
+        const filename = `${analysisResult.jobTitle.replace(/[^a-z0-9]/gi, '_')}_Full_Report.pdf`;
+        await downloadComponentAsPdf(reportComponent, filename);
+    } catch (e) {
+        const errorMessage = e instanceof Error ? e.message : 'error.unknown';
+        toast.error(t(errorMessage));
+    } finally {
+        setIsDownloadingPdf(false);
+    }
   };
 
   const renderContent = () => {
@@ -204,8 +236,13 @@ const App: React.FC = () => {
                                 rewrittenResume={rewrittenResume}
                                 onGenerateDecision={handleGenerateDecision}
                                 onRewriteResume={handleRewriteResume}
+                                onAnalyzeConsistency={handleAnalyzeConsistency}
+                                interviewTranscript={interviewTranscript}
+                                setInterviewTranscript={setInterviewTranscript}
                                 isLoading={isLoading}
                                 activeAnalysis={activeAnalysis}
+                                onDownloadPdf={handleDownloadPdf}
+                                isDownloadingPdf={isDownloadingPdf}
                             />
                         </div>
                     )}

@@ -69,7 +69,7 @@
   },
   "input": {
     "title": "Inicie Sua Análise",
-    "subtitle": "Forneça os detalhes da vaga, do currículo e, opcionalmente, da entrevista abaixo. Nossa IA cuidará do resto.",
+    "subtitle": "Forneça os detalhes da vaga e do currículo abaixo. Nossa IA cuidará do resto.",
     "job": {
         "tab": "Descrição da Vaga",
         "placeholder": "Cole a descrição completa da vaga aqui...",
@@ -78,12 +78,6 @@
     "resume": {
         "tab": "Currículo do Candidato",
         "placeholder": "Cole o currículo completo do candidato aqui..."
-    },
-    "interview": {
-        "tab": "Entrevista",
-        "label": "Transcrição da Entrevista (Opcional)",
-        "placeholder": "Cole a transcrição completa da entrevista aqui para habilitar a análise de consistência...",
-        "info": "Fornecer uma transcrição permite uma análise mais profunda da consistência e das soft skills do candidato."
     },
     "type": {
         "text": "Colar Texto",
@@ -144,7 +138,12 @@
   },
   "consistency": {
     "title": "Análise de Consistência da Entrevista",
-    "placeholder": "Cole a transcrição completa da entrevista aqui...",
+    "subtitle": "Após a análise inicial, cole a transcrição da entrevista para avaliar a consistência do candidato.",
+    "transcriptLabel": "Transcrição da Entrevista",
+    "transcriptPlaceholder": "Cole a transcrição completa da entrevista aqui para habilitar a análise de consistência...",
+    "transcriptInfo": "Fornecer uma transcrição permite uma análise mais profunda da consistência e das soft skills do candidato.",
+    "button": "Analisar Consistência",
+    "buttonLoading": "Analisando...",
     "loading": "Analisando consistência da entrevista...",
     "consistencyScore": "Pontuação de Consistência",
     "missingFromInterview": "Do Currículo, Ausente na Entrevista",
@@ -164,6 +163,59 @@
     "gapResolutions": "Resolução de Lacunas",
     "gapLabel": "Lacuna"
   },
+  "consistencyInfo": {
+    "title": "Análise de Consistência da Entrevista",
+    "intro1": "Essa é uma das ferramentas mais poderosas da plataforma HireSight, projetada para a etapa final do processo de contratação, após a entrevista com o candidato.",
+    "whatIsItTitle": "O Que é a Análise de Consistência da Entrevista?",
+    "whatIsItP1": "Em resumo, é uma análise profunda que a inteligência artificial realiza para comparar, verificar e avaliar as informações de três fontes principais:",
+    "whatIsItSources": {
+      "source1": "A Descrição da Vaga original.",
+      "source2": "O Currículo do candidato (que foi analisado na primeira fase).",
+      "source3": "A Transcrição da Entrevista que você acabou de realizar."
+    },
+    "whatIsItP2": "O objetivo principal é ir além do que está no papel e entender se o que o candidato disse na entrevista é consistente com o que ele escreveu no currículo, e como tudo isso se alinha com as necessidades da vaga.",
+    "howItWorksTitle": "Como Funciona e Que Informações Ela Gera?",
+    "howItWorksP1": "Para iniciar a análise, você fornece a transcrição da entrevista. A IA então cruza essa nova informação com a análise inicial que já havia sido feita e gera um relatório completo com os seguintes pontos:",
+    "features": {
+      "gapResolutions": {
+        "title": "Resolução de Lacunas",
+        "description": "Verifica se as perguntas na entrevista esclareceram as 'Lacunas de Compatibilidade' identificadas na primeira análise (ex: 'Falta experiência com a ferramenta X'). A IA analisa as respostas do candidato e determina se a lacuna foi resolvida de forma satisfatória."
+      },
+      "consistencyScore": {
+        "title": "Pontuação de Consistência",
+        "description": "Um percentual que mede o quão alinhadas foram as respostas do candidato na entrevista com as informações do seu currículo. Uma pontuação alta indica um candidato consistente e confiável."
+      },
+      "inconsistencies": {
+        "title": "Inconsistências e Contradições",
+        "description": "Aponta ativamente qualquer discrepância. Por exemplo, se no currículo o candidato disse que liderou um projeto, mas na entrevista descreveu sua participação como secundária, isso será sinalizado."
+      },
+      "softSkills": {
+        "title": "Análise de Soft Skills",
+        "description": "Com base na linguagem e nas respostas, a IA avalia as soft skills demonstradas durante a conversa, como comunicação, resolução de problemas, pensamento crítico e atitude."
+      },
+      "newInfo": {
+        "title": "Novas Informações Relevantes",
+        "description": "Destaca habilidades, experiências ou qualidades positivas que o candidato mencionou na entrevista, mas que não estavam no currículo. Isso pode revelar pontos fortes ocultos."
+      },
+      "notDiscussed": {
+        "title": "Pontos do Currículo Não Abordados",
+        "description": "Identifica informações importantes do currículo que não foram discutidas na entrevista, o que pode indicar uma oportunidade perdida ou um ponto para follow-up."
+      },
+      "prosCons": {
+        "title": "Prós e Contras para Contratação",
+        "description": "Com base em toda a análise (currículo + entrevista), a IA gera uma lista final e balanceada dos motivos pelos quais o candidato deveria ou não ser contratado."
+      },
+      "updatedScore": {
+        "title": "Pontuação de Compatibilidade Atualizada",
+        "description": "A pontuação inicial de compatibilidade é recalculada, levando em conta o desempenho e as informações da entrevista. Esse número final reflete uma visão muito mais completa do candidato."
+      },
+      "finalDecision": {
+        "title": "Decisão Final de Contratação",
+        "description": "Com base em todos os dados, a IA fornece uma recomendação final e clara: 'Recomendado para Contratação' ou 'Não Recomendado'."
+      }
+    },
+    "conclusion": "Essencialmente, a Análise de Consistência da Entrevista é o seu 'assistente especialista' que garante que sua decisão de contratação seja a mais informada, justa e precisa possível."
+  },
   "status": {
     "match": "Compatível",
     "partial": "Parcial",
@@ -173,7 +225,8 @@
     "back": "Voltar",
     "save": "Salvar",
     "cancel": "Cancelar",
-    "downloadResume": "Baixar Currículo"
+    "downloadResume": "Baixar Currículo",
+    "downloadPdf": "Baixar PDF"
   },
   "settings": {
     "title": "Configurações",

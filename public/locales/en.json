@@ -69,7 +69,7 @@
   },
   "input": {
     "title": "Start Your Analysis",
-    "subtitle": "Provide the job, resume, and optional interview details below. Our AI will handle the rest.",
+    "subtitle": "Provide the job and resume details below. Our AI will handle the rest.",
     "job": {
         "tab": "Job Description",
         "placeholder": "Paste the full job description here...",
@@ -78,12 +78,6 @@
     "resume": {
         "tab": "Candidate's Resume",
         "placeholder": "Paste the candidate's full resume here..."
-    },
-    "interview": {
-        "tab": "Interview",
-        "label": "Interview Transcript (Optional)",
-        "placeholder": "Paste the full interview transcript here to enable consistency analysis...",
-        "info": "Providing a transcript allows for a deeper analysis of candidate consistency and soft skills."
     },
     "type": {
         "text": "Paste Text",
@@ -144,7 +138,12 @@
   },
   "consistency": {
     "title": "Interview Consistency Analysis",
-    "placeholder": "Paste the full interview transcript here...",
+    "subtitle": "After the initial analysis, paste the interview transcript to assess candidate consistency.",
+    "transcriptLabel": "Interview Transcript",
+    "transcriptPlaceholder": "Paste the full interview transcript here to enable consistency analysis...",
+    "transcriptInfo": "Providing a transcript allows for a deeper analysis of candidate consistency and soft skills.",
+    "button": "Analyze Consistency",
+    "buttonLoading": "Analyzing...",
     "loading": "Analyzing interview consistency...",
     "consistencyScore": "Consistency Score",
     "missingFromInterview": "From Resume, Missing in Interview",
@@ -164,6 +163,59 @@
     "gapResolutions": "Gap Resolutions",
     "gapLabel": "Gap"
   },
+  "consistencyInfo": {
+    "title": "Interview Consistency Analysis",
+    "intro1": "This is one of the most powerful tools on the HireSight platform, designed for the final stage of the hiring process, after the candidate's interview.",
+    "whatIsItTitle": "What is the Interview Consistency Analysis?",
+    "whatIsItP1": "In short, it is a deep analysis that the artificial intelligence performs to compare, verify, and evaluate information from three main sources:",
+    "whatIsItSources": {
+      "source1": "The original Job Description.",
+      "source2": "The candidate's Resume (which was analyzed in the first phase).",
+      "source3": "The transcript of the interview you just conducted."
+    },
+    "whatIsItP2": "The main goal is to go beyond what's on paper and understand if what the candidate said in the interview is consistent with what they wrote on their resume, and how it all aligns with the job's requirements.",
+    "howItWorksTitle": "How It Works and What Information It Generates",
+    "howItWorksP1": "To start the analysis, you provide the interview transcript. The AI then cross-references this new information with the initial analysis and generates a complete report with the following points:",
+    "features": {
+      "gapResolutions": {
+        "title": "Gap Resolutions",
+        "description": "Checks if your interview questions clarified the 'Compatibility Gaps' identified in the first analysis (e.g., 'Lacks experience with tool X'). The AI analyzes the candidate's answers and determines if the gap was satisfactorily resolved."
+      },
+      "consistencyScore": {
+        "title": "Consistency Score",
+        "description": "A percentage that measures how well the candidate's interview answers align with their resume. A high score indicates a consistent and reliable candidate."
+      },
+      "inconsistencies": {
+        "title": "Inconsistencies and Contradictions",
+        "description": "Actively points out any discrepancies. For example, if the resume stated they led a project, but in the interview they described their role as secondary, this will be flagged."
+      },
+      "softSkills": {
+        "title": "Soft Skills Analysis",
+        "description": "Based on language and responses, the AI assesses soft skills demonstrated during the conversation, such as communication, problem-solving, critical thinking, and attitude."
+      },
+      "newInfo": {
+        "title": "New Relevant Information",
+        "description": "Highlights positive skills, experiences, or qualities mentioned in the interview that were not on the resume, potentially revealing hidden strengths."
+      },
+      "notDiscussed": {
+        "title": "Resume Points Not Discussed",
+        "description": "Identifies important information from the resume that was not discussed in the interview, which might indicate a missed opportunity or a point for follow-up."
+      },
+      "prosCons": {
+        "title": "Pros and Cons for Hiring",
+        "description": "Based on the entire analysis (resume + interview), the AI generates a final, balanced list of reasons why the candidate should or should not be hired."
+      },
+      "updatedScore": {
+        "title": "Updated Overall Fit Score",
+        "description": "The initial compatibility score is recalculated, taking into account the interview performance. This final number reflects a much more complete view of the candidate."
+      },
+      "finalDecision": {
+        "title": "Final Hiring Decision",
+        "description": "Based on all the data, the AI provides a final, clear recommendation: 'Recommended for Hire' or 'Not Recommended'."
+      }
+    },
+    "conclusion": "Essentially, the Interview Consistency Analysis is your 'expert assistant' ensuring your hiring decision is as informed, fair, and accurate as possible."
+  },
   "status": {
     "match": "Match",
     "partial": "Partial",
@@ -173,7 +225,8 @@
       "back": "Back",
       "save": "Save",
       "cancel": "Cancel",
-      "downloadResume": "Download Resume"
+      "downloadResume": "Download Resume",
+      "downloadPdf": "Download PDF"
   },
   "settings": {
     "title": "Settings",

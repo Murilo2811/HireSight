@@ -69,7 +69,7 @@
   },
   "input": {
     "title": "Inicia tu Análisis",
-    "subtitle": "Proporciona los detalles del trabajo, el currículum y, opcionalmente, la entrevista a continuación. Nuestra IA se encargará del resto.",
+    "subtitle": "Proporciona los detalles del trabajo y el currículum a continuación. Nuestra IA se encargará del resto.",
     "job": {
         "tab": "Descripción del Trabajo",
         "placeholder": "Pega la descripción completa del trabajo aquí...",
@@ -78,12 +78,6 @@
     "resume": {
         "tab": "Currículum del Candidato",
         "placeholder": "Pega el currículum completo del candidato aquí..."
-    },
-    "interview": {
-        "tab": "Entrevista",
-        "label": "Transcripción de la Entrevista (Opcional)",
-        "placeholder": "Pega la transcripción completa de la entrevista aquí para habilitar el análisis de coherencia...",
-        "info": "Proporcionar una transcripción permite un análisis más profundo de la coherencia y las habilidades blandas del candidato."
     },
     "type": {
         "text": "Pegar Texto",
@@ -144,7 +138,12 @@
   },
   "consistency": {
     "title": "Análisis de Coherencia de la Entrevista",
-    "placeholder": "Pega la transcripción completa de la entrevista aquí...",
+    "subtitle": "Después del análisis inicial, pega la transcripción de la entrevista para evaluar la coherencia del candidato.",
+    "transcriptLabel": "Transcripción de la Entrevista",
+    "transcriptPlaceholder": "Pega la transcripción completa de la entrevista aquí para habilitar el análisis de coherencia...",
+    "transcriptInfo": "Proporcionar una transcripción permite un análisis más profundo de la coherencia y las habilidades blandas del candidato.",
+    "button": "Analizar Coherencia",
+    "buttonLoading": "Analizando...",
     "loading": "Analizando la coherencia de la entrevista...",
     "consistencyScore": "Puntuación de Coherencia",
     "missingFromInterview": "Del Currículum, Ausente en la Entrevista",
@@ -164,6 +163,59 @@
     "gapResolutions": "Resolución de Brechas",
     "gapLabel": "Brecha"
   },
+  "consistencyInfo": {
+    "title": "Análisis de Coherencia de la Entrevista",
+    "intro1": "Esta es una de las herramientas más potentes de la plataforma HireSight, diseñada para la etapa final del proceso de contratación, después de la entrevista con el candidato.",
+    "whatIsItTitle": "¿Qué es el Análisis de Coherencia de la Entrevista?",
+    "whatIsItP1": "En resumen, es un análisis profundo que la inteligencia artificial realiza para comparar, verificar y evaluar información de tres fuentes principales:",
+    "whatIsItSources": {
+      "source1": "La Descripción del Puesto original.",
+      "source2": "El Currículum del candidato (analizado en la primera fase).",
+      "source3": "La transcripción de la entrevista que acaba de realizar."
+    },
+    "whatIsItP2": "El objetivo principal es ir más allá de lo que está en el papel y entender si lo que el candidato dijo en la entrevista es coherente con lo que escribió en su currículum, y cómo todo ello se alinea con las necesidades del puesto.",
+    "howItWorksTitle": "Cómo Funciona y Qué Información Genera",
+    "howItWorksP1": "Para iniciar el análisis, usted proporciona la transcripción de la entrevista. La IA cruza esta nueva información con el análisis inicial y genera un informe completo con los siguientes puntos:",
+    "features": {
+      "gapResolutions": {
+        "title": "Resolución de Brechas",
+        "description": "Verifica si sus preguntas en la entrevista aclararon las 'Brechas de Compatibilidad' identificadas en el primer análisis (ej: 'Falta experiencia con la herramienta X'). La IA analiza las respuestas del candidato y determina si la brecha se resolvió satisfactoriamente."
+      },
+      "consistencyScore": {
+        "title": "Puntuación de Coherencia",
+        "description": "Un porcentaje que mide qué tan alineadas estuvieron las respuestas del candidato en la entrevista con su currículum. Una puntuación alta indica un candidato coherente y fiable."
+      },
+      "inconsistencies": {
+        "title": "Inconsistencias y Contradicciones",
+        "description": "Señala activamente cualquier discrepancia. Por ejemplo, si en el currículum dijo que lideró un proyecto, pero en la entrevista describió su rol como secundario, se marcará."
+      },
+      "softSkills": {
+        "title": "Análisis de Habilidades Blandas",
+        "description": "Basándose en el lenguaje y las respuestas, la IA evalúa las habilidades blandas demostradas durante la conversación, como la comunicación, la resolución de problemas, el pensamiento crítico y la actitud."
+      },
+      "newInfo": {
+        "title": "Nueva Información Relevante",
+        "description": "Destaca habilidades, experiencias o cualidades positivas mencionadas en la entrevista que no estaban en el currículum, revelando posibles fortalezas ocultas."
+      },
+      "notDiscussed": {
+        "title": "Puntos del Currículum No Abordados",
+        "description": "Identifica información importante del currículum que no se discutió en la entrevista, lo que podría indicar una oportunidad perdida o un punto a seguir."
+      },
+      "prosCons": {
+        "title": "Pros y Contras para la Contratación",
+        "description": "Basándose en todo el análisis (currículum + entrevista), la IA genera una lista final y equilibrada de razones por las que el candidato debería o no ser contratado."
+      },
+      "updatedScore": {
+        "title": "Puntuación de Compatibilidad Actualizada",
+        "description": "La puntuación de compatibilidad inicial se recalcula, teniendo en cuenta el desempeño en la entrevista. Este número final refleja una visión mucho más completa del candidato."
+      },
+      "finalDecision": {
+        "title": "Decisión Final de Contratación",
+        "description": "Basándose en todos los datos, la IA proporciona una recomendación final y clara: 'Recomendado para Contratar' o 'No Recomendado'."
+      }
+    },
+    "conclusion": "En esencia, el Análisis de Coherencia de la Entrevista es su 'asistente experto' que garantiza que su decisión de contratación sea lo más informada, justa y precisa posible."
+  },
   "status": {
     "match": "Coincide",
     "partial": "Parcial",
@@ -173,7 +225,8 @@
     "back": "Volver",
     "save": "Guardar",
     "cancel": "Cancelar",
-    "downloadResume": "Descargar Currículum"
+    "downloadResume": "Descargar Currículum",
+    "downloadPdf": "Descargar PDF"
   },
   "settings": {
     "title": "Configuración",

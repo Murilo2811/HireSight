@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useState } from 'react';
 import { useTranslations } from '../../contexts/LanguageContext';
 import {
   RecruiterAnalysisResult,
@@ -8,12 +8,15 @@ import {
   MatchStatus,
   MatchedItem,
 } from '../../types';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/Card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 import { Progress } from '../ui/Progress';
-import { AwardIcon, TrendingUpIcon, DownloadIcon, CheckCircle2Icon, XCircleIcon, FileTextIcon } from '../icons';
+import { AwardIcon, DownloadIcon, CheckCircle2Icon, XCircleIcon, FileTextIcon, InfoIcon, MicIcon, PdfIcon } from '../icons';
 import { downloadFile } from '../../utils/parsers';
+import { Textarea } from '../ui/Textarea';
+import { Label } from '../ui/Label';
+import ConsistencyInfoModal from '../ConsistencyInfoModal';
 
 interface ResultsSectionProps {
   analysisResult: RecruiterAnalysisResult;
@@ -21,7 +24,12 @@ interface ResultsSectionProps {
   consistencyResult: ConsistencyAnalysisResult | null;
   rewrittenResume: RewrittenResumeResult | null;
   onGenerateDecision: () => void;
-  onRewriteResume: (inputs: { jobInput: any; resumeInput: any; }) => void;
+  onRewriteResume: () => void;
+  onAnalyzeConsistency: () => void;
+  onDownloadPdf: () => void;
+  isDownloadingPdf: boolean;
+  interviewTranscript: string;
+  setInterviewTranscript: (value: string) => void;
   isLoading: boolean;
   activeAnalysis: string | null;
 }
@@ -74,15 +82,16 @@ const ResultsSection: React.FC<ResultsSectionProps> = ({
   rewrittenResume,
   onGenerateDecision,
   onRewriteResume,
+  onAnalyzeConsistency,
+  onDownloadPdf,
+  isDownloadingPdf,
+  interviewTranscript,
+  setInterviewTranscript,
   isLoading,
   activeAnalysis,
 }) => {
   const { t } = useTranslations();
-  
-  const dummyInputs = useMemo(() => ({
-      jobInput: { content: 'dummy job', format: 'text' as const },
-      resumeInput: { content: 'dummy resume', format: 'text' as const },
-  }), []);
+  const [isConsistencyInfoModalOpen, setIsConsistencyInfoModalOpen] = useState(false);
 
   const getScoreColorClass = (score: number) => {
     if (score >= 80) return 'text-green-500';
@@ -106,6 +115,15 @@ const ResultsSection: React.FC<ResultsSectionProps> = ({
     if (decision === 'Likely Hire') return 'success';
     if (decision === 'Unlikely Hire') return 'danger';
     return 'warning'; // For 'More Information Needed'
+  };
+
+  const getRecommendationStyle = (recommendation: string) => {
+    switch (recommendation) {
+        case 'Strong Fit': return 'success';
+        case 'Partial Fit': return 'warning';
+        case 'Weak Fit': return 'danger';
+        default: return 'secondary';
+    }
   };
 
   return (
@@ -138,11 +156,11 @@ const ResultsSection: React.FC<ResultsSectionProps> = ({
         
         {/* Action Buttons */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Button size="lg" variant="outline" onClick={onGenerateDecision} disabled={isLoading}>
+            <Button size="lg" variant="outline" onClick={onGenerateDecision} disabled={isLoading || !!preliminaryDecision}>
                  {isLoading && activeAnalysis === 'generateDecision' ? <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-current mr-2"></div> : <AwardIcon className="mr-2 h-5 w-5" />}
                 {t('results.actions.decision')}
             </Button>
-            <Button size="lg" variant="outline" onClick={() => onRewriteResume(dummyInputs)} disabled={isLoading}>
+            <Button size="lg" variant="outline" onClick={onRewriteResume} disabled={isLoading || !!rewrittenResume}>
                 {isLoading && activeAnalysis === 'rewriteResume' ? <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-current mr-2"></div> : <FileTextIcon className="mr-2 h-5 w-5" />}
                 {t('results.actions.rewrite')}
             </Button>
@@ -173,25 +191,6 @@ const ResultsSection: React.FC<ResultsSectionProps> = ({
             </Card>
         )}
         
-        {consistencyResult && (
-             <Card className="animate-fade-in">
-                <CardHeader><CardTitle>{t('consistency.title')}</CardTitle></CardHeader>
-                <CardContent className="divide-y divide-border -mt-6">
-                    <ResultSection title={t('consistency.summary')}>
-                        <p className="text-muted-foreground">{consistencyResult.summary}</p>
-                    </ResultSection>
-                     <ResultSection title={t('consistency.preliminaryHiringDecision')}>
-                        <Badge variant={getPreliminaryDecisionStyle(consistencyResult.preliminaryHiringDecision)}>
-                            {consistencyResult.preliminaryHiringDecision}
-                        </Badge>
-                    </ResultSection>
-                    <ResultSection title={t('consistency.recommendation')}>
-                         <Badge>{consistencyResult.recommendation}</Badge>
-                    </ResultSection>
-                </CardContent>
-            </Card>
-        )}
-        
         {rewrittenResume && (
             <Card className="animate-fade-in">
                 <CardHeader>
@@ -211,10 +210,108 @@ const ResultsSection: React.FC<ResultsSectionProps> = ({
             </Card>
         )}
 
+        {/* Consistency Analysis Section */}
+        <Card className="animate-fade-in">
+            <CardHeader>
+                <CardTitle>{t('consistency.title')}</CardTitle>
+                <CardDescription>{t('consistency.subtitle')}</CardDescription>
+            </CardHeader>
+            <CardContent>
+                 <div className="space-y-2">
+                    <div className="flex items-center gap-1">
+                        <Label htmlFor="interview-transcript">{t('consistency.transcriptLabel')}</Label>
+                        <Button variant="ghost" size="icon" className="h-5 w-5 text-muted-foreground hover:text-foreground" onClick={() => setIsConsistencyInfoModalOpen(true)}>
+                            <InfoIcon className="h-4 w-4" />
+                        </Button>
+                    </div>
+                    <Textarea 
+                        id="interview-transcript"
+                        value={interviewTranscript}
+                        onChange={(e) => setInterviewTranscript(e.target.value)}
+                        placeholder={t('consistency.transcriptPlaceholder')}
+                        className="h-40"
+                        disabled={isLoading}
+                    />
+                 </div>
+                 <Button 
+                    onClick={onAnalyzeConsistency}
+                    disabled={isLoading || !interviewTranscript}
+                    className="mt-4 w-full sm:w-auto"
+                >
+                    {isLoading && activeAnalysis === 'analyzeConsistency' 
+                        ? <><div className="animate-spin rounded-full h-5 w-5 border-b-2 border-current mr-2"></div>{t('consistency.buttonLoading')}</>
+                        : <><MicIcon className="mr-2 h-4 w-4" />{t('consistency.button')}</>
+                    }
+                 </Button>
+
+                 {consistencyResult && (
+                    <div className="mt-6 border-t pt-6 space-y-4">
+                        <ResultSection title={t('consistency.summary')}>
+                            <p className="text-muted-foreground">{consistencyResult.summary}</p>
+                        </ResultSection>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-center">
+                            <div className="bg-muted/50 p-3 rounded-lg">
+                                <p className="text-xs font-semibold text-muted-foreground">{t('consistency.updatedOverallFit')}</p>
+                                <p className={`text-2xl font-bold ${getScoreColorClass(consistencyResult.updatedOverallFitScore)}`}>{consistencyResult.updatedOverallFitScore}%</p>
+                            </div>
+                            <div className="bg-muted/50 p-3 rounded-lg">
+                                <p className="text-xs font-semibold text-muted-foreground">{t('consistency.consistencyScore')}</p>
+                                <p className={`text-2xl font-bold ${getScoreColorClass(consistencyResult.consistencyScore)}`}>{consistencyResult.consistencyScore}%</p>
+                            </div>
+                            <div className="bg-muted/50 p-3 rounded-lg flex flex-col justify-center">
+                                <p className="text-xs font-semibold text-muted-foreground mb-1">{t('consistency.preliminaryHiringDecision')}</p>
+                                <Badge variant={getPreliminaryDecisionStyle(consistencyResult.preliminaryHiringDecision)} className="self-center">
+                                    {consistencyResult.preliminaryHiringDecision}
+                                </Badge>
+                            </div>
+                            <div className="bg-muted/50 p-3 rounded-lg flex flex-col justify-center">
+                                <p className="text-xs font-semibold text-muted-foreground mb-1">{t('consistency.hiringDecision')}</p>
+                                <Badge variant={consistencyResult.hiringDecision === 'Recommended for Hire' ? 'success' : 'danger'} className="self-center">
+                                    {t(consistencyResult.hiringDecision === 'Recommended for Hire' ? 'consistency.recommended' : 'consistency.notRecommended')}
+                                </Badge>
+                            </div>
+                        </div>
+
+                         <ResultSection title={t('consistency.prosForHiring')}>
+                            {consistencyResult.prosForHiring.length > 0 ? (
+                                <ul className="space-y-2">
+                                    {consistencyResult.prosForHiring.map((pro, i) => <li key={i} className="flex items-start gap-2"><CheckCircle2Icon className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" /><span>{pro}</span></li>)}
+                                </ul>
+                            ) : <p className="text-muted-foreground">{t('consistency.none')}</p>}
+                        </ResultSection>
+
+                        <ResultSection title={t('consistency.consForHiring')}>
+                            {consistencyResult.consForHiring.length > 0 ? (
+                                <ul className="space-y-2">
+                                    {consistencyResult.consForHiring.map((con, i) => <li key={i} className="flex items-start gap-2"><XCircleIcon className="h-5 w-5 text-red-500 flex-shrink-0 mt-0.5" /><span>{con}</span></li>)}
+                                </ul>
+                            ) : <p className="text-muted-foreground">{t('consistency.none')}</p>}
+                        </ResultSection>
+                        
+                         <ResultSection title={t('consistency.recommendation')}>
+                             <Badge variant={getRecommendationStyle(consistencyResult.recommendation)}>{consistencyResult.recommendation}</Badge>
+                        </ResultSection>
+                    </div>
+                 )}
+            </CardContent>
+        </Card>
+        <ConsistencyInfoModal isOpen={isConsistencyInfoModalOpen} onClose={() => setIsConsistencyInfoModalOpen(false)} />
+
         {/* DETAILED ANALYSIS REPORT */}
         <Card>
           <CardHeader>
-              <CardTitle>{t('analysis.title')}</CardTitle>
+              <div className="flex justify-between items-center">
+                <CardTitle>{t('analysis.title')}</CardTitle>
+                <Button variant="outline" size="sm" onClick={onDownloadPdf} disabled={isDownloadingPdf}>
+                    {isDownloadingPdf ? (
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2"></div>
+                    ) : (
+                        <PdfIcon className="mr-2 h-4 w-4" />
+                    )}
+                    {t('buttons.downloadPdf')}
+                </Button>
+              </div>
           </CardHeader>
           <CardContent className="divide-y divide-border">
               <ResultSection title={t('analysis.fitExplanation')}>
