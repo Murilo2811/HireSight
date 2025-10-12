@@ -4,8 +4,8 @@ export const matchedItemSchema = {
     type: Type.OBJECT,
     properties: {
         item: { type: Type.STRING, description: "The specific responsibility or skill from the job description." },
-        status: { type: Type.STRING, enum: ['Match', 'Partial', 'No Match'], description: "The match status." },
-        explanation: { type: Type.STRING, description: "A brief explanation of why this status was given, referencing the resume." },
+        status: { type: Type.STRING, enum: ['Match', 'Partial', 'No Match'], description: "The match status. 'Match' requires direct evidence. 'Partial' indicates related but not direct experience. 'No Match' means the skill is absent." },
+        explanation: { type: Type.STRING, description: "A brief, factual explanation of why this status was given, referencing specific parts of the resume." },
     },
     required: ['item', 'status', 'explanation']
 };
@@ -17,7 +17,7 @@ export const sectionMatchSchema = {
             type: Type.ARRAY,
             items: matchedItemSchema
         },
-        score: { type: Type.NUMBER, description: "A score from 0 to 100 representing the match for this section." },
+        score: { type: Type.NUMBER, description: "A score from 0 to 100 representing the match for this section, heavily weighted by 'Match' statuses on required items." },
     },
     required: ['items', 'score']
 };
@@ -35,17 +35,21 @@ export const recruiterAnalysisSchema = {
     type: Type.OBJECT,
     properties: {
         jobTitle: { type: Type.STRING, description: "The job title from the job description." },
-        summary: { type: Type.STRING, description: "A concise summary of the candidate's fit for the role." },
+        summary: { type: Type.STRING, description: "A concise summary of the candidate's fit for the role, based only on the provided documents." },
         keyResponsibilitiesMatch: sectionMatchSchema,
         requiredSkillsMatch: sectionMatchSchema,
         niceToHaveSkillsMatch: sectionMatchSchema,
         companyCultureFit: analysisWithScoreSchema,
-        salaryAndBenefits: { type: Type.STRING, description: "Analysis of salary expectations and benefits, if mentioned." },
-        redFlags: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Any potential red flags or concerns." },
-        interviewQuestions: { type: Type.ARRAY, items: { type: Type.STRING }, description: "A list of suggested interview questions for this candidate." },
-        overallFitScore: { type: Type.NUMBER, description: "An overall fit score from 0 to 100." },
-        fitExplanation: { type: Type.STRING, description: "An explanation for the overall fit score." },
-        compatibilityGaps: { type: Type.ARRAY, items: { type: Type.STRING }, description: "A list of specific gaps between the resume and job description." },
+        salaryAndBenefits: { type: Type.STRING, description: "Analysis of salary expectations and benefits, only if explicitly mentioned in the resume." },
+        redFlags: { 
+            type: Type.ARRAY, 
+            items: { type: Type.STRING }, 
+            description: "A list of potential red flags or serious concerns. IMPORTANT: Do not flag a job with an end date of 'Present', 'Atual', or the current month as a typo; this indicates the current job. Only flag dates if the start date is in the future or there are unexplained long employment gaps." 
+        },
+        interviewQuestions: { type: Type.ARRAY, items: { type: Type.STRING }, description: "A list of suggested interview questions based on the identified compatibility gaps and resume details." },
+        overallFitScore: { type: Type.NUMBER, description: "An overall fit score from 0 to 100, weighting required skills and key responsibilities most heavily." },
+        fitExplanation: { type: Type.STRING, description: "A detailed explanation for the overall fit score, justifying the number with concrete evidence from the analysis." },
+        compatibilityGaps: { type: Type.ARRAY, items: { type: Type.STRING }, description: "A list of specific, crucial gaps between the resume and the job description's core requirements." },
     },
     required: [
         'jobTitle', 'summary', 'keyResponsibilitiesMatch', 'requiredSkillsMatch',
@@ -58,9 +62,9 @@ export const preliminaryDecisionSchema = {
     type: Type.OBJECT,
     properties: {
         decision: { type: Type.STRING, enum: ['Recommended for Interview', 'Not Recommended'] },
-        pros: { type: Type.ARRAY, items: { type: Type.STRING } },
-        cons: { type: Type.ARRAY, items: { type: Type.STRING } },
-        explanation: { type: Type.STRING }
+        pros: { type: Type.ARRAY, items: { type: Type.STRING }, description: "A list of the strongest points in favor of interviewing the candidate." },
+        cons: { type: Type.ARRAY, items: { type: Type.STRING }, description: "A list of the most significant drawbacks against interviewing." },
+        explanation: { type: Type.STRING, description: "A concise justification for the decision based on the pros and cons." }
     },
     required: ['decision', 'pros', 'cons', 'explanation']
 };
@@ -70,7 +74,7 @@ export const consistencySectionStringSchema = {
     type: Type.OBJECT,
     properties: {
         items: { type: Type.STRING },
-        score: { type: Type.NUMBER },
+        score: { type: Type.NUMBER, description: "Score from 0 to 100 based on the analysis." },
     },
     required: ['items', 'score']
 };
@@ -79,7 +83,7 @@ export const consistencySectionStringArraySchema = {
     type: Type.OBJECT,
     properties: {
         items: { type: Type.ARRAY, items: { type: Type.STRING } },
-        score: { type: Type.NUMBER },
+        score: { type: Type.NUMBER, description: "Score from 0 to 100. For inconsistencies, a lower score is better." },
     },
     required: ['items', 'score']
 };
@@ -89,7 +93,7 @@ export const gapResolutionItemSchema = {
     properties: {
         gap: { type: Type.STRING, description: "The specific compatibility gap identified before the interview." },
         resolution: { type: Type.STRING, description: "The candidate's response or clarification from the interview transcript that addresses this gap. If the gap was not addressed, explain why." },
-        isResolved: { type: Type.BOOLEAN, description: "Set to true if the candidate's response satisfactorily resolves the gap. Set to false if the response is insufficient, evasive, or if the gap was not addressed at all." }
+        isResolved: { type: Type.BOOLEAN, description: "Set to true only if the candidate's response fully and satisfactorily resolves the gap. Set to false if the response is insufficient, evasive, or if the gap was not addressed at all." }
     },
     required: ['gap', 'resolution', 'isResolved']
 };
@@ -98,7 +102,7 @@ export const gapResolutionSectionSchema = {
     type: Type.OBJECT,
     properties: {
         items: { type: Type.ARRAY, items: gapResolutionItemSchema },
-        score: { type: Type.NUMBER },
+        score: { type: Type.NUMBER, description: "A score from 0-100 representing the percentage of gaps successfully resolved." },
     },
     required: ['items', 'score']
 };
@@ -106,10 +110,7 @@ export const gapResolutionSectionSchema = {
 export const consistencyAnalysisSchema = {
     type: Type.OBJECT,
     properties: {
-        consistencyScore: { 
-            type: Type.NUMBER,
-            description: "A score from 0 to 100 representing the consistency between the resume and the interview."
-        },
+        consistencyScore: { type: Type.NUMBER, description: "Overall score from 0-100 measuring alignment between the resume and interview." },
         summary: { type: Type.STRING },
         recommendation: { type: Type.STRING, enum: ['Strong Fit', 'Partial Fit', 'Weak Fit'] },
         softSkillsAnalysis: consistencySectionStringSchema,
@@ -119,16 +120,9 @@ export const consistencyAnalysisSchema = {
         gapResolutions: gapResolutionSectionSchema,
         prosForHiring: { type: Type.ARRAY, items: { type: Type.STRING } },
         consForHiring: { type: Type.ARRAY, items: { type: Type.STRING } },
-        updatedOverallFitScore: { 
-            type: Type.NUMBER,
-            description: "The updated overall fit score from 0 to 100, considering the interview performance."
-        },
+        updatedOverallFitScore: { type: Type.NUMBER, description: "The recalculated overall fit score from 0-100, considering interview data." },
         hiringDecision: { type: Type.STRING, enum: ['Recommended for Hire', 'Not Recommended'] },
-        preliminaryHiringDecision: { 
-            type: Type.STRING, 
-            description: "A preliminary hiring verdict based on the interview analysis, before making a final conclusion. This helps gauge the immediate impression from the interview.",
-            enum: ['Likely Hire', 'Unlikely Hire', 'More Information Needed'] 
-        },
+        preliminaryHiringDecision: { type: Type.STRING, enum: ['Likely Hire', 'Unlikely Hire', 'More Information Needed']},
     },
     required: [
         'consistencyScore', 'summary', 'recommendation', 'softSkillsAnalysis', 'inconsistencies',
@@ -140,7 +134,7 @@ export const consistencyAnalysisSchema = {
 export const rewrittenResumeSchema = {
     type: Type.OBJECT,
     properties: {
-        rewrittenResume: { type: Type.STRING, description: "The full text of the rewritten resume." }
+        rewrittenResume: { type: Type.STRING, description: "The full text of the rewritten resume in Markdown format." }
     },
     required: ['rewrittenResume']
 };
