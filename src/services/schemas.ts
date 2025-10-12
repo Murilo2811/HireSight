@@ -106,7 +106,10 @@ export const gapResolutionSectionSchema = {
 export const consistencyAnalysisSchema = {
     type: Type.OBJECT,
     properties: {
-        consistencyScore: { type: Type.NUMBER },
+        consistencyScore: { 
+            type: Type.NUMBER,
+            description: "A score from 0 to 100 representing the consistency between the resume and the interview."
+        },
         summary: { type: Type.STRING },
         recommendation: { type: Type.STRING, enum: ['Strong Fit', 'Partial Fit', 'Weak Fit'] },
         softSkillsAnalysis: consistencySectionStringSchema,
@@ -116,7 +119,10 @@ export const consistencyAnalysisSchema = {
         gapResolutions: gapResolutionSectionSchema,
         prosForHiring: { type: Type.ARRAY, items: { type: Type.STRING } },
         consForHiring: { type: Type.ARRAY, items: { type: Type.STRING } },
-        updatedOverallFitScore: { type: Type.NUMBER },
+        updatedOverallFitScore: { 
+            type: Type.NUMBER,
+            description: "The updated overall fit score from 0 to 100, considering the interview performance."
+        },
         hiringDecision: { type: Type.STRING, enum: ['Recommended for Hire', 'Not Recommended'] },
         preliminaryHiringDecision: { 
             type: Type.STRING, 

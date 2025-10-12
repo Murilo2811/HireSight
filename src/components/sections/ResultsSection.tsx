@@ -17,6 +17,7 @@ import { downloadFile } from '../../utils/parsers';
 import { Textarea } from '../ui/Textarea';
 import { Label } from '../ui/Label';
 import ConsistencyInfoModal from '../ConsistencyInfoModal';
+import Tooltip from '../ui/Tooltip';
 
 interface ResultsSectionProps {
   analysisResult: RecruiterAnalysisResult;
@@ -35,10 +36,17 @@ interface ResultsSectionProps {
 }
 
 // Helper component for section titles
-const ResultSection: React.FC<{ title: string; score?: number; children: React.ReactNode }> = ({ title, score, children }) => (
+const ResultSection: React.FC<{ title: string; score?: number; tooltipText?: string; children: React.ReactNode }> = ({ title, score, tooltipText, children }) => (
     <div className="py-4 first:pt-0 last:pb-0">
         <div className="flex items-center justify-between mb-3">
-            <h4 className="text-lg font-semibold">{title}</h4>
+            <div className="flex items-center gap-2">
+                <h4 className="text-lg font-semibold">{title}</h4>
+                {tooltipText && (
+                    <Tooltip content={tooltipText}>
+                        <InfoIcon className="h-4 w-4 text-muted-foreground cursor-pointer" />
+                    </Tooltip>
+                )}
+            </div>
             {score !== undefined && <Badge variant="secondary">{score}%</Badge>}
         </div>
         <div className="text-sm">{children}</div>
@@ -93,9 +101,18 @@ const ResultsSection: React.FC<ResultsSectionProps> = ({
   const { t } = useTranslations();
   const [isConsistencyInfoModalOpen, setIsConsistencyInfoModalOpen] = useState(false);
 
+  const formatScore = (score: number) => {
+    // Handles scores that are decimals (0-1) and converts them to percentages (0-100).
+    if (score > 0 && score <= 1) {
+        return Math.round(score * 100);
+    }
+    return Math.round(score); // Rounds to nearest integer if already > 1.
+  };
+
   const getScoreColorClass = (score: number) => {
-    if (score >= 80) return 'text-green-500';
-    if (score >= 60) return 'text-yellow-500';
+    const formattedScore = formatScore(score); // Use the formatted score for color logic
+    if (formattedScore >= 80) return 'text-green-500';
+    if (formattedScore >= 60) return 'text-yellow-500';
     return 'text-destructive';
   };
   
@@ -115,6 +132,13 @@ const ResultsSection: React.FC<ResultsSectionProps> = ({
     if (decision === 'Likely Hire') return 'success';
     if (decision === 'Unlikely Hire') return 'danger';
     return 'warning'; // For 'More Information Needed'
+  };
+
+  const getTranslatedDecision = (decision: string) => {
+    if (decision === 'Likely Hire') return t('consistency.likelyHire');
+    if (decision === 'Unlikely Hire') return t('consistency.unlikelyHire');
+    if (decision === 'More Information Needed') return t('consistency.moreInfoNeeded');
+    return decision;
   };
 
   const getRecommendationStyle = (recommendation: string) => {
@@ -251,26 +275,34 @@ const ResultsSection: React.FC<ResultsSectionProps> = ({
                         </ResultSection>
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-center">
-                            <div className="bg-muted/50 p-3 rounded-lg">
-                                <p className="text-xs font-semibold text-muted-foreground">{t('consistency.updatedOverallFit')}</p>
-                                <p className={`text-2xl font-bold ${getScoreColorClass(consistencyResult.updatedOverallFitScore)}`}>{consistencyResult.updatedOverallFitScore}%</p>
-                            </div>
-                            <div className="bg-muted/50 p-3 rounded-lg">
-                                <p className="text-xs font-semibold text-muted-foreground">{t('consistency.consistencyScore')}</p>
-                                <p className={`text-2xl font-bold ${getScoreColorClass(consistencyResult.consistencyScore)}`}>{consistencyResult.consistencyScore}%</p>
-                            </div>
-                            <div className="bg-muted/50 p-3 rounded-lg flex flex-col justify-center">
-                                <p className="text-xs font-semibold text-muted-foreground mb-1">{t('consistency.preliminaryHiringDecision')}</p>
-                                <Badge variant={getPreliminaryDecisionStyle(consistencyResult.preliminaryHiringDecision)} className="self-center">
-                                    {consistencyResult.preliminaryHiringDecision}
-                                </Badge>
-                            </div>
-                            <div className="bg-muted/50 p-3 rounded-lg flex flex-col justify-center">
-                                <p className="text-xs font-semibold text-muted-foreground mb-1">{t('consistency.hiringDecision')}</p>
-                                <Badge variant={consistencyResult.hiringDecision === 'Recommended for Hire' ? 'success' : 'danger'} className="self-center">
-                                    {t(consistencyResult.hiringDecision === 'Recommended for Hire' ? 'consistency.recommended' : 'consistency.notRecommended')}
-                                </Badge>
-                            </div>
+                            <Tooltip content={t('tooltips.updatedOverallFit')} className="flex-1">
+                                <div className="bg-muted/50 p-3 rounded-lg h-full">
+                                    <p className="text-xs font-semibold text-muted-foreground">{t('consistency.updatedOverallFit')}</p>
+                                    <p className={`text-2xl font-bold ${getScoreColorClass(consistencyResult.updatedOverallFitScore)}`}>{formatScore(consistencyResult.updatedOverallFitScore)}%</p>
+                                </div>
+                            </Tooltip>
+                            <Tooltip content={t('tooltips.consistencyScore')} className="flex-1">
+                                <div className="bg-muted/50 p-3 rounded-lg h-full">
+                                    <p className="text-xs font-semibold text-muted-foreground">{t('consistency.consistencyScore')}</p>
+                                    <p className={`text-2xl font-bold ${getScoreColorClass(consistencyResult.consistencyScore)}`}>{formatScore(consistencyResult.consistencyScore)}%</p>
+                                </div>
+                            </Tooltip>
+                            <Tooltip content={t('tooltips.preliminaryVerdict')} className="flex-1">
+                                <div className="bg-muted/50 p-3 rounded-lg flex flex-col justify-center h-full">
+                                    <p className="text-xs font-semibold text-muted-foreground mb-1">{t('consistency.preliminaryHiringDecision')}</p>
+                                    <Badge variant={getPreliminaryDecisionStyle(consistencyResult.preliminaryHiringDecision)} className="self-center">
+                                        {getTranslatedDecision(consistencyResult.preliminaryHiringDecision)}
+                                    </Badge>
+                                </div>
+                            </Tooltip>
+                            <Tooltip content={t('tooltips.finalDecision')} className="flex-1">
+                                <div className="bg-muted/50 p-3 rounded-lg flex flex-col justify-center h-full">
+                                    <p className="text-xs font-semibold text-muted-foreground mb-1">{t('consistency.hiringDecision')}</p>
+                                    <Badge variant={consistencyResult.hiringDecision === 'Recommended for Hire' ? 'success' : 'danger'} className="self-center">
+                                        {t(consistencyResult.hiringDecision === 'Recommended for Hire' ? 'consistency.recommended' : 'consistency.notRecommended')}
+                                    </Badge>
+                                </div>
+                            </Tooltip>
                         </div>
 
                          <ResultSection title={t('consistency.prosForHiring')}>
@@ -318,7 +350,7 @@ const ResultsSection: React.FC<ResultsSectionProps> = ({
                   <p className="text-muted-foreground">{analysisResult.fitExplanation}</p>
               </ResultSection>
 
-              <ResultSection title={t('analysis.compatibilityGaps')}>
+              <ResultSection title={t('analysis.compatibilityGaps')} tooltipText={t('tooltips.compatibilityGaps')}>
                   {analysisResult.compatibilityGaps.length > 0 ? (
                       <ul className="list-disc list-inside space-y-1 text-muted-foreground">
                           {analysisResult.compatibilityGaps.map((gap, i) => <li key={i}>{gap}</li>)}
@@ -352,7 +384,7 @@ const ResultsSection: React.FC<ResultsSectionProps> = ({
                   </ResultSection>
               )}
 
-              <ResultSection title={t('analysis.redFlags')}>
+              <ResultSection title={t('analysis.redFlags')} tooltipText={t('tooltips.redFlags')}>
                   {analysisResult.redFlags.length > 0 ? (
                       <ul className="list-disc list-inside space-y-1 text-muted-foreground">
                           {analysisResult.redFlags.map((flag, i) => <li key={i}>{flag}</li>)}

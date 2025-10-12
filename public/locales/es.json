@@ -161,7 +161,10 @@
     "recommended": "Recomendado para Contratación",
     "notRecommended": "No Recomendado",
     "gapResolutions": "Resolución de Brechas",
-    "gapLabel": "Brecha"
+    "gapLabel": "Brecha",
+    "likelyHire": "Contratación Probable",
+    "unlikelyHire": "Contratación Improbable",
+    "moreInfoNeeded": "Se Necesita Más Información"
   },
   "consistencyInfo": {
     "title": "Análisis de Coherencia de la Entrevista",
@@ -284,5 +287,13 @@
         "rewriteResume": "Currículum reescrito con éxito.",
         "saveSettings": "¡Configuración guardada con éxito!"
       }
+  },
+  "tooltips": {
+    "updatedOverallFit": "Esta es la puntuación final de compatibilidad del candidato, recalculada después de considerar su desempeño en la entrevista.",
+    "consistencyScore": "Mide qué tan bien se alinean las respuestas del candidato en la entrevista con la información de su currículum.",
+    "preliminaryVerdict": "Un veredicto de contratación inicial basado únicamente en el análisis de la entrevista, que sirve como una impresión inmediata.",
+    "finalDecision": "La recomendación final de contratación basada en todos los datos disponibles: currículum, descripción del trabajo y entrevista.",
+    "compatibilityGaps": "Habilidades o experiencias específicas requeridas por la descripción del trabajo que no se encontraron en el currículum del candidato.",
+    "redFlags": "Posibles preocupaciones o inconsistencias que pueden requerir una mayor investigación durante el proceso de contratación."
   }
 }

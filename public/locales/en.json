@@ -161,7 +161,10 @@
     "recommended": "Recommended for Hire",
     "notRecommended": "Not Recommended",
     "gapResolutions": "Gap Resolutions",
-    "gapLabel": "Gap"
+    "gapLabel": "Gap",
+    "likelyHire": "Likely Hire",
+    "unlikelyHire": "Unlikely Hire",
+    "moreInfoNeeded": "More Information Needed"
   },
   "consistencyInfo": {
     "title": "Interview Consistency Analysis",
@@ -284,5 +287,13 @@
         "rewriteResume": "Resume rewritten successfully.",
         "saveSettings": "Settings saved successfully!"
       }
+  },
+  "tooltips": {
+    "updatedOverallFit": "This is the candidate's final compatibility score, recalculated after considering their interview performance.",
+    "consistencyScore": "Measures how well the candidate's interview answers align with the information on their resume.",
+    "preliminaryVerdict": "An initial hiring verdict based solely on the interview analysis, serving as an immediate impression.",
+    "finalDecision": "The final hiring recommendation based on all available data: resume, job description, and interview.",
+    "compatibilityGaps": "Specific skills or experiences required by the job description that were not found in the candidate's resume.",
+    "redFlags": "Potential concerns or inconsistencies that may require further investigation during the hiring process."
   }
 }
