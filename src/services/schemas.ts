@@ -110,18 +110,45 @@ export const gapResolutionSectionSchema = {
 export const consistencyAnalysisSchema = {
     type: Type.OBJECT,
     properties: {
-        consistencyScore: { type: Type.NUMBER, description: "Overall score from 0-100 measuring alignment between the resume and interview." },
-        summary: { type: Type.STRING },
+        consistencyScore: { type: Type.NUMBER, description: "A percentage (0-100) measuring how aligned interview answers were with the resume. High score = consistent and reliable." },
+        summary: { type: Type.STRING, description: "A concise narrative summary of the entire consistency analysis." },
         recommendation: { type: Type.STRING, enum: ['Strong Fit', 'Partial Fit', 'Weak Fit'] },
-        softSkillsAnalysis: consistencySectionStringSchema,
-        inconsistencies: consistencySectionStringArraySchema,
-        missingFromInterview: consistencySectionStringArraySchema,
-        newInInterview: consistencySectionStringArraySchema,
-        gapResolutions: gapResolutionSectionSchema,
-        prosForHiring: { type: Type.ARRAY, items: { type: Type.STRING } },
-        consForHiring: { type: Type.ARRAY, items: { type: Type.STRING } },
-        updatedOverallFitScore: { type: Type.NUMBER, description: "The recalculated overall fit score from 0-100, considering interview data." },
-        hiringDecision: { type: Type.STRING, enum: ['Recommended for Hire', 'Not Recommended'] },
+        softSkillsAnalysis: {
+            ...consistencySectionStringSchema,
+            properties: {
+                ...consistencySectionStringSchema.properties,
+                items: { type: Type.STRING, description: "Based on language and responses, an analysis of soft skills demonstrated (communication, problem-solving, etc.)." }
+            }
+        },
+        inconsistencies: {
+            ...consistencySectionStringArraySchema,
+            properties: {
+                ...consistencySectionStringArraySchema.properties,
+                items: { type: Type.ARRAY, items: { type: Type.STRING }, description: "List of discrepancies between resume and interview (e.g., resume says 'led project', interview says 'assisted'). Empty if none." }
+            }
+        },
+        missingFromInterview: {
+            ...consistencySectionStringArraySchema,
+            properties: {
+                ...consistencySectionStringArraySchema.properties,
+                items: { type: Type.ARRAY, items: { type: Type.STRING }, description: "List of important points from the resume that were not discussed in the interview." }
+            }
+        },
+        newInInterview: {
+            ...consistencySectionStringArraySchema,
+            properties: {
+                ...consistencySectionStringArraySchema.properties,
+                items: { type: Type.ARRAY, items: { type: Type.STRING }, description: "List of new, positive skills or experiences revealed in the interview that were not on the resume." }
+            }
+        },
+        gapResolutions: {
+            ...gapResolutionSectionSchema,
+            description: "An analysis of the pre-identified compatibility gaps. For each gap, determine if the candidate's interview responses resolved it satisfactorily."
+        },
+        prosForHiring: { type: Type.ARRAY, items: { type: Type.STRING }, description: "A final, balanced list of reasons why the candidate SHOULD be hired, based on resume + interview." },
+        consForHiring: { type: Type.ARRAY, items: { type: Type.STRING }, description: "A final, balanced list of reasons why the candidate should NOT be hired, based on resume + interview." },
+        updatedOverallFitScore: { type: Type.NUMBER, description: "The initial overall fit score, recalculated (0-100) to include interview performance." },
+        hiringDecision: { type: Type.STRING, enum: ['Recommended for Hire', 'Not Recommended'], description: "The final, clear hiring recommendation based on all data." },
         preliminaryHiringDecision: { type: Type.STRING, enum: ['Likely Hire', 'Unlikely Hire', 'More Information Needed']},
     },
     required: [

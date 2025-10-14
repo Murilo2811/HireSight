@@ -106,10 +106,17 @@ ${JSON.stringify(analysisResult, null, 2)}
         const promptParts = [
             { text: `
 **Analysis Task & Guidelines:**
-- Analyze the interview transcript in the context of the resume, job description, and pre-identified compatibility gaps.
-- **Gap Resolution:** For each gap, determine if the candidate's interview responses *fully and satisfactorily* resolved it. The 'resolution' text should quote or summarize the relevant part of the interview. The 'isResolved' flag must be \`true\` only if the gap is convincingly closed. If the answer is evasive, insufficient, or the gap wasn't addressed, set it to \`false\` and explain why.
-- **Consistency:** Identify direct contradictions between the resume and the interview. A difference in emphasis is not a contradiction, but a factual discrepancy is (e.g., claiming to lead a project on the resume vs. being a minor contributor in the interview).
-- **Final Decision:** The final hiring decision should be a logical conclusion based *only* on the combined evidence from all three sources (JD, resume, interview).
+You are to conduct a deep analysis comparing a job description, a candidate's resume, and an interview transcript. Your goal is to assess consistency and overall fit for the role. Your entire output must be a single JSON object that strictly adheres to the provided schema. Generate a complete report covering the following points:
+
+1.  **Gap Resolutions**: Review the pre-identified 'Compatibility Gaps'. For each one, analyze the candidate's interview answers to determine if the gap was satisfactorily resolved.
+2.  **Consistency Score**: Calculate a percentage (0-100) that measures how well the candidate's interview answers align with their resume. A high score indicates a consistent and reliable candidate.
+3.  **Inconsistencies and Contradictions**: Actively identify and list any discrepancies. For example, if the resume says they led a project but the interview implies they were only a participant, flag it. If none, return an empty array.
+4.  **Soft Skills Analysis**: Based on the candidate's language and responses, evaluate the soft skills demonstrated during the conversation (e.g., communication, problem-solving, critical thinking, attitude).
+5.  **New Relevant Information**: List any positive skills, experiences, or qualities the candidate mentioned in the interview that were NOT present on their resume. These could be hidden strengths.
+6.  **Resume Points Not Discussed**: Identify important information from the resume that was not discussed during the interview, which might represent a missed opportunity.
+7.  **Pros and Cons for Hiring**: Based on *all* information (resume + interview), generate a final, balanced list of reasons why the candidate should or should not be hired.
+8.  **Updated Overall Fit Score**: Recalculate the initial compatibility score (0-100), factoring in the candidate's performance and the new information from the interview.
+9.  **Final Hiring Decision**: Provide a final, clear recommendation: "Recommended for Hire" or "Not Recommended".
 ` },
             { text: "Job Description:" },
             jobPart,

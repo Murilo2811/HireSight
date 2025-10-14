@@ -104,6 +104,50 @@ const PrintableReport: React.FC<PrintableReportProps> = ({ t, analysisResult, pr
                                 </ul>
                             </div>
                         </div>
+
+                        <div className="mt-4 break-inside-avoid">
+                            <h3 className="font-semibold mb-2">{t('consistency.gapResolutions')} - Score: {consistencyResult.gapResolutions.score}%</h3>
+                            <ul className="list-none space-y-2">
+                                {consistencyResult.gapResolutions.items.map((item, i) => (
+                                    <li key={i} className="pl-2 border-l-2">
+                                        <p className="font-medium">{item.gap}</p>
+                                        <p className="text-xs text-muted-foreground">{item.isResolved ? 'Resolved' : 'Not Resolved'}: {item.resolution}</p>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+
+                        <div className="mt-4 break-inside-avoid">
+                            <h3 className="font-semibold mb-2">{t('consistency.softSkillsAnalysis')} - Score: {consistencyResult.softSkillsAnalysis.score}%</h3>
+                            <p className="text-muted-foreground">{consistencyResult.softSkillsAnalysis.items}</p>
+                        </div>
+
+                        {consistencyResult.inconsistencies.items.length > 0 && (
+                            <div className="mt-4 break-inside-avoid">
+                                <h3 className="font-semibold mb-2">{t('consistency.inconsistencies')}</h3>
+                                <ul className="list-disc list-inside space-y-1">
+                                    {consistencyResult.inconsistencies.items.map((item, i) => <li key={i}>{item}</li>)}
+                                </ul>
+                            </div>
+                        )}
+
+                        {consistencyResult.newInInterview.items.length > 0 && (
+                            <div className="mt-4 break-inside-avoid">
+                                <h3 className="font-semibold mb-2">{t('consistency.newInInterview')}</h3>
+                                <ul className="list-disc list-inside space-y-1">
+                                    {consistencyResult.newInInterview.items.map((item, i) => <li key={i}>{item}</li>)}
+                                </ul>
+                            </div>
+                        )}
+
+                        {consistencyResult.missingFromInterview.items.length > 0 && (
+                            <div className="mt-4 break-inside-avoid">
+                                <h3 className="font-semibold mb-2">{t('consistency.missingFromInterview')}</h3>
+                                <ul className="list-disc list-inside space-y-1">
+                                    {consistencyResult.missingFromInterview.items.map((item, i) => <li key={i}>{item}</li>)}
+                                </ul>
+                            </div>
+                        )}
                     </Section>
                 )}
 

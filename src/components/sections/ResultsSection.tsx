@@ -269,12 +269,12 @@ const ResultsSection: React.FC<ResultsSectionProps> = ({
                  </Button>
 
                  {consistencyResult && (
-                    <div className="mt-6 border-t pt-6 space-y-4">
+                    <div className="mt-6 border-t pt-6 space-y-4 divide-y divide-border">
                         <ResultSection title={t('consistency.summary')}>
                             <p className="text-muted-foreground">{consistencyResult.summary}</p>
                         </ResultSection>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-center">
+                        <div className="pt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-center">
                             <Tooltip content={t('tooltips.updatedOverallFit')} className="flex-1">
                                 <div className="bg-muted/50 p-3 rounded-lg h-full">
                                     <p className="text-xs font-semibold text-muted-foreground">{t('consistency.updatedOverallFit')}</p>
@@ -304,24 +304,72 @@ const ResultsSection: React.FC<ResultsSectionProps> = ({
                                 </div>
                             </Tooltip>
                         </div>
-
-                         <ResultSection title={t('consistency.prosForHiring')}>
-                            {consistencyResult.prosForHiring.length > 0 ? (
-                                <ul className="space-y-2">
-                                    {consistencyResult.prosForHiring.map((pro, i) => <li key={i} className="flex items-start gap-2"><CheckCircle2Icon className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" /><span>{pro}</span></li>)}
-                                </ul>
-                            ) : <p className="text-muted-foreground">{t('consistency.none')}</p>}
-                        </ResultSection>
-
-                        <ResultSection title={t('consistency.consForHiring')}>
-                            {consistencyResult.consForHiring.length > 0 ? (
-                                <ul className="space-y-2">
-                                    {consistencyResult.consForHiring.map((con, i) => <li key={i} className="flex items-start gap-2"><XCircleIcon className="h-5 w-5 text-red-500 flex-shrink-0 mt-0.5" /><span>{con}</span></li>)}
-                                </ul>
-                            ) : <p className="text-muted-foreground">{t('consistency.none')}</p>}
-                        </ResultSection>
                         
-                         <ResultSection title={t('consistency.recommendation')}>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8">
+                            <ResultSection title={t('consistency.prosForHiring')}>
+                                {consistencyResult.prosForHiring.length > 0 ? (
+                                    <ul className="space-y-2">
+                                        {consistencyResult.prosForHiring.map((pro, i) => <li key={i} className="flex items-start gap-2"><CheckCircle2Icon className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" /><span>{pro}</span></li>)}
+                                    </ul>
+                                ) : <p className="text-muted-foreground">{t('consistency.none')}</p>}
+                            </ResultSection>
+
+                            <ResultSection title={t('consistency.consForHiring')}>
+                                {consistencyResult.consForHiring.length > 0 ? (
+                                    <ul className="space-y-2">
+                                        {consistencyResult.consForHiring.map((con, i) => <li key={i} className="flex items-start gap-2"><XCircleIcon className="h-5 w-5 text-red-500 flex-shrink-0 mt-0.5" /><span>{con}</span></li>)}
+                                    </ul>
+                                ) : <p className="text-muted-foreground">{t('consistency.none')}</p>}
+                            </ResultSection>
+                        </div>
+
+                        <ResultSection title={t('consistency.gapResolutions')} score={consistencyResult.gapResolutions.score}>
+                            {consistencyResult.gapResolutions.items.length > 0 ? (
+                                <ul className="space-y-4">
+                                    {consistencyResult.gapResolutions.items.map((item, index) => (
+                                        <li key={index} className="p-3 bg-muted/50 rounded-lg">
+                                            <p className="font-medium text-muted-foreground mb-2">{t('consistency.gapLabel')}: <span className="font-normal text-foreground">{item.gap}</span></p>
+                                            <div className={`flex items-start gap-2 text-sm pl-3 border-l-2 ${item.isResolved ? 'border-green-500' : 'border-destructive'}`}>
+                                                {item.isResolved 
+                                                    ? <CheckCircle2Icon className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" /> 
+                                                    : <XCircleIcon className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />}
+                                                <p>{item.resolution}</p>
+                                            </div>
+                                        </li>
+                                    ))}
+                                </ul>
+                            ) : <p className="text-muted-foreground">{t('consistency.none')}</p>}
+                        </ResultSection>
+
+                        <ResultSection title={t('consistency.softSkillsAnalysis')} score={consistencyResult.softSkillsAnalysis.score}>
+                            <p className="text-muted-foreground">{consistencyResult.softSkillsAnalysis.items}</p>
+                        </ResultSection>
+
+                        <ResultSection title={t('consistency.inconsistencies')} score={consistencyResult.inconsistencies.score}>
+                            {consistencyResult.inconsistencies.items.length > 0 ? (
+                                <ul className="list-disc list-inside space-y-1 text-destructive">
+                                    {consistencyResult.inconsistencies.items.map((item, index) => <li key={index}>{item}</li>)}
+                                </ul>
+                            ) : <p className="text-muted-foreground">{t('consistency.none')}</p>}
+                        </ResultSection>
+
+                        <ResultSection title={t('consistency.newInInterview')} score={consistencyResult.newInInterview.score}>
+                            {consistencyResult.newInInterview.items.length > 0 ? (
+                                <ul className="list-disc list-inside space-y-1 text-green-600 dark:text-green-400">
+                                    {consistencyResult.newInInterview.items.map((item, index) => <li key={index}>{item}</li>)}
+                                </ul>
+                            ) : <p className="text-muted-foreground">{t('consistency.none')}</p>}
+                        </ResultSection>
+
+                        <ResultSection title={t('consistency.missingFromInterview')} score={consistencyResult.missingFromInterview.score}>
+                            {consistencyResult.missingFromInterview.items.length > 0 ? (
+                                <ul className="list-disc list-inside space-y-1 text-yellow-600 dark:text-yellow-400">
+                                    {consistencyResult.missingFromInterview.items.map((item, index) => <li key={index}>{item}</li>)}
+                                </ul>
+                            ) : <p className="text-muted-foreground">{t('consistency.none')}</p>}
+                        </ResultSection>
+
+                        <ResultSection title={t('consistency.recommendation')}>
                              <Badge variant={getRecommendationStyle(consistencyResult.recommendation)}>{consistencyResult.recommendation}</Badge>
                         </ResultSection>
                     </div>
