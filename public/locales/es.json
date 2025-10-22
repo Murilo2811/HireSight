@@ -229,7 +229,8 @@
     "save": "Guardar",
     "cancel": "Cancelar",
     "downloadResume": "Descargar Currículum",
-    "downloadPdf": "Descargar PDF"
+    "downloadPdf": "Descargar PDF",
+    "clear": "Limpiar"
   },
   "settings": {
     "title": "Configuración",

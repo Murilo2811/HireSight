@@ -229,7 +229,8 @@
       "save": "Save",
       "cancel": "Cancel",
       "downloadResume": "Download Resume",
-      "downloadPdf": "Download PDF"
+      "downloadPdf": "Download PDF",
+      "clear": "Clear"
   },
   "settings": {
     "title": "Settings",
