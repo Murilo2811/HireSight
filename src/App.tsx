@@ -112,9 +112,17 @@ const App: React.FC = () => {
       toast.success(t(`toast.success.${analysisType}`));
       return result; // Return result for chaining
     } catch (e) {
-      const errorMessage = e instanceof Error ? e.message : 'error.unknown';
-      setError(t(errorMessage));
-      toast.error(t(errorMessage));
+      const originalMessage = e instanceof Error ? e.message : 'error.unknown';
+      let displayKey = originalMessage;
+
+      // Check for overload-related strings
+      if (originalMessage.includes('overloaded') || originalMessage.includes('503')) {
+          displayKey = 'error.modelOverloaded';
+      }
+      
+      const translatedError = t(displayKey);
+      setError(translatedError);
+      toast.error(translatedError);
     } finally {
       setIsLoading(false);
       setActiveAnalysis(null);

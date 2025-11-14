@@ -278,7 +278,8 @@
     "openaiKeyMissing": "OpenAI API Key is missing. Please add it in the settings.",
     "anthropicKeyMissing": "Anthropic API Key is missing. Please add it in the settings.",
     "groqKeyMissing": "Groq API Key is missing. Please add it in the settings.",
-    "serviceNotInitialized": "AI service is not initialized. Please check your API key settings."
+    "serviceNotInitialized": "AI service is not initialized. Please check your API key settings.",
+    "modelOverloaded": "The AI service is currently experiencing high traffic and is temporarily overloaded. Please wait a few moments and try again."
   },
   "toast": {
       "success": {

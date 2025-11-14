@@ -278,7 +278,8 @@
     "openaiKeyMissing": "A Chave de API da OpenAI não foi encontrada. Por favor, adicione-a nas configurações.",
     "anthropicKeyMissing": "A Chave de API da Anthropic não foi encontrada. Por favor, adicione-a nas configurações.",
     "groqKeyMissing": "A Chave de API da Groq não foi encontrada. Por favor, adicione-a nas configurações.",
-    "serviceNotInitialized": "O serviço de IA não foi inicializado. Verifique as configurações da sua chave de API."
+    "serviceNotInitialized": "O serviço de IA não foi inicializado. Verifique as configurações da sua chave de API.",
+    "modelOverloaded": "O serviço de IA está com alto tráfego no momento e temporariamente sobrecarregado. Por favor, aguarde alguns instantes e tente novamente."
   },
   "toast": {
       "success": {
