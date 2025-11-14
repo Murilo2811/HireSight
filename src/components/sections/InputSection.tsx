@@ -1,11 +1,11 @@
-import React, { useState, forwardRef, useRef } from 'react';
+import React, { useState, forwardRef } from 'react';
 import { useTranslations } from '../../contexts/LanguageContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/Card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/Tabs';
 import { Button } from '../ui/Button';
 import { Textarea } from '../ui/Textarea';
 import { Input } from '../ui/Input';
-import { BriefcaseIcon, FileTextIcon, UploadIcon, GlobeIcon, XCircleIcon } from '../icons';
+import { BriefcaseIcon, FileTextIcon, UploadIcon, GlobeIcon } from '../icons';
 import { parseDocumentFile, parseUrlContent } from '../../utils/parsers';
 import { toast } from '../ui/Toast';
 
@@ -22,9 +22,6 @@ const InputSection = forwardRef<HTMLDivElement, InputSectionProps>(
   ({ onAnalyze, isLoading, isLoggedIn, onLoginClick }, ref) => {
     const { t } = useTranslations();
 
-    const jobDescriptionFileRef = useRef<HTMLInputElement>(null);
-    const resumeFileRef = useRef<HTMLInputElement>(null);
-
     // State for Job Input
     const [jobInputType, setJobInputType] = useState<InputType>('text');
     const [jobDescriptionText, setJobDescriptionText] = useState('');
@@ -35,23 +32,6 @@ const InputSection = forwardRef<HTMLDivElement, InputSectionProps>(
     const [resumeInputType, setResumeInputType] = useState<Omit<InputType, 'url'>>('text');
     const [resumeText, setResumeText] = useState('');
     const [resumeFile, setResumeFile] = useState<File | null>(null);
-
-    const handleClearJobDescription = () => {
-        setJobDescriptionText('');
-        setJobDescriptionUrl('');
-        setJobDescriptionFile(null);
-        if (jobDescriptionFileRef.current) {
-          jobDescriptionFileRef.current.value = '';
-        }
-    };
-
-    const handleClearResume = () => {
-        setResumeText('');
-        setResumeFile(null);
-        if (resumeFileRef.current) {
-          resumeFileRef.current.value = '';
-        }
-    };
 
     const isAnalyzeDisabled =
       isLoading ||
@@ -109,7 +89,7 @@ const InputSection = forwardRef<HTMLDivElement, InputSectionProps>(
               <CardContent>
                 {/* Job Tab */}
                 <TabsContent value="job">
-                  <div className="flex justify-center items-center mb-4 gap-4">
+                  <div className="text-center mb-4">
                     <Tabs defaultValue="text" onValueChange={(v) => setJobInputType(v as InputType)}>
                         <TabsList>
                             <TabsTrigger value="text"><FileTextIcon className="mr-2 h-4 w-4"/>{t('input.type.text')}</TabsTrigger>
@@ -117,32 +97,24 @@ const InputSection = forwardRef<HTMLDivElement, InputSectionProps>(
                             <TabsTrigger value="file"><UploadIcon className="mr-2 h-4 w-4"/>{t('input.type.file')}</TabsTrigger>
                         </TabsList>
                     </Tabs>
-                    <Button variant="outline" size="sm" onClick={handleClearJobDescription}>
-                        <XCircleIcon className="w-4 h-4 mr-1" />
-                        {t('buttons.clear')}
-                    </Button>
                   </div>
                   {jobInputType === 'text' && <Textarea value={jobDescriptionText} onChange={e => setJobDescriptionText(e.target.value)} placeholder={t('input.job.placeholder')} className="h-72" />}
                   {jobInputType === 'url' && <Input type="url" value={jobDescriptionUrl} onChange={e => setJobDescriptionUrl(e.target.value)} placeholder={t('input.job.urlPlaceholder')} />}
-                  {jobInputType === 'file' && <Input ref={jobDescriptionFileRef} type="file" onChange={e => setJobDescriptionFile(e.target.files?.[0] || null)} accept=".pdf,.docx" />}
+                  {jobInputType === 'file' && <Input type="file" onChange={e => setJobDescriptionFile(e.target.files?.[0] || null)} accept=".pdf,.docx" />}
                 </TabsContent>
 
                 {/* Resume Tab */}
                 <TabsContent value="resume">
-                  <div className="flex justify-center items-center mb-4 gap-4">
+                  <div className="text-center mb-4">
                     <Tabs defaultValue="text" onValueChange={(v) => setResumeInputType(v as 'text' | 'file')}>
                         <TabsList>
                             <TabsTrigger value="text"><FileTextIcon className="mr-2 h-4 w-4"/>{t('input.type.text')}</TabsTrigger>
                             <TabsTrigger value="file"><UploadIcon className="mr-2 h-4 w-4"/>{t('input.type.file')}</TabsTrigger>
                         </TabsList>
                     </Tabs>
-                    <Button variant="outline" size="sm" onClick={handleClearResume}>
-                        <XCircleIcon className="w-4 h-4 mr-1" />
-                        {t('buttons.clear')}
-                    </Button>
                   </div>
                    {resumeInputType === 'text' && <Textarea value={resumeText} onChange={e => setResumeText(e.target.value)} placeholder={t('input.resume.placeholder')} className="h-72" />}
-                   {resumeInputType === 'file' && <Input ref={resumeFileRef} type="file" onChange={e => setResumeFile(e.target.files?.[0] || null)} accept=".pdf,.docx" />}
+                   {resumeInputType === 'file' && <Input type="file" onChange={e => setResumeFile(e.target.files?.[0] || null)} accept=".pdf,.docx" />}
                 </TabsContent>
               </CardContent>
             </Tabs>

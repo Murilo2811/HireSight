@@ -1,5 +1,5 @@
 {
-  "appTitle": "HireSight",
+  "appTitle": "HireRight",
   "nav": {
     "home": "Início",
     "features": "Recursos",
@@ -15,7 +15,7 @@
     "signup": {
       "tab": "Cadastrar",
       "title": "Crie uma Conta",
-      "description": "Comece a usar o HireSight em segundos.",
+      "description": "Comece a usar o HireRight em segundos.",
       "button": "Criar Conta"
     },
     "emailLabel": "E-mail",
@@ -28,7 +28,7 @@
       "line1": "Encontre o Talento Certo,",
       "line2": "Mais Rápido."
     },
-    "subtitle": "O HireSight utiliza IA de ponta para analisar profundamente currículos e descrições de vagas, fornecendo insights incomparáveis para você tomar decisões de contratação mais inteligentes e baseadas em dados.",
+    "subtitle": "O HireRight utiliza IA de ponta para analisar profundamente currículos e descrições de vagas, fornecendo insights incomparáveis para você tomar decisões de contratação mais inteligentes e baseadas em dados.",
     "cta": {
       "primary": "Começar Agora",
       "secondary": "Como Funciona"
@@ -40,7 +40,7 @@
     }
   },
   "features": {
-    "title": "Por que Escolher o HireSight?",
+    "title": "Por que Escolher o HireRight?",
     "subtitle": "Nossa plataforma foi projetada para otimizar seu processo de contratação do início ao fim.",
     "advancedAI": {
       "title": "Análise Avançada de IA",
@@ -168,7 +168,7 @@
   },
   "consistencyInfo": {
     "title": "Análise de Consistência da Entrevista",
-    "intro1": "Essa é uma das ferramentas mais poderosas da plataforma HireSight, projetada para a etapa final do processo de contratação, após a entrevista com o candidato.",
+    "intro1": "Essa é uma das ferramentas mais poderosas da plataforma HireRight, projetada para a etapa final do processo de contratação, após a entrevista com o candidato.",
     "whatIsItTitle": "O Que é a Análise de Consistência da Entrevista?",
     "whatIsItP1": "Em resumo, é uma análise profunda que a inteligência artificial realiza para comparar, verificar e avaliar as informações de três fontes principais:",
     "whatIsItSources": {
@@ -229,8 +229,7 @@
     "save": "Salvar",
     "cancel": "Cancelar",
     "downloadResume": "Baixar Currículo",
-    "downloadPdf": "Baixar PDF",
-    "clear": "Limpar"
+    "downloadPdf": "Baixar PDF"
   },
   "settings": {
     "title": "Configurações",
@@ -278,8 +277,7 @@
     "openaiKeyMissing": "A Chave de API da OpenAI não foi encontrada. Por favor, adicione-a nas configurações.",
     "anthropicKeyMissing": "A Chave de API da Anthropic não foi encontrada. Por favor, adicione-a nas configurações.",
     "groqKeyMissing": "A Chave de API da Groq não foi encontrada. Por favor, adicione-a nas configurações.",
-    "serviceNotInitialized": "O serviço de IA não foi inicializado. Verifique as configurações da sua chave de API.",
-    "modelOverloaded": "O serviço de IA está com alto tráfego no momento e temporariamente sobrecarregado. Por favor, aguarde alguns instantes e tente novamente."
+    "serviceNotInitialized": "O serviço de IA não foi inicializado. Verifique as configurações da sua chave de API."
   },
   "toast": {
       "success": {

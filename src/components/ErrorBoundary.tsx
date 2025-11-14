@@ -11,16 +11,12 @@ interface ErrorBoundaryState {
 }
 
 class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  // FIX: Reverted to using a constructor for state initialization.
-  // The class property syntax was causing type inference issues where TypeScript
-  // was failing to recognize the `props` property on the component instance.
-  // A constructor ensures `this.props` and `this.state` are correctly typed.
-  constructor(props: ErrorBoundaryProps) {
-    super(props);
-    this.state = { hasError: false, error: null };
-  }
+  // Fix: Initialize state as a class property to ensure it's correctly typed on the component instance.
+  // This resolves the error on line 16 and allows removing the constructor.
+  state: ErrorBoundaryState = { hasError: false, error: null };
 
-  static getDerivedStateFromError(error: Error) {
+  // Fix: Add explicit return type for static method.
+  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
     return { hasError: true, error };
   }
 
@@ -29,16 +25,22 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
   }
 
   render() {
+    // Fix: With state correctly typed, this.state can be safely accessed, resolving error on line 28.
     if (this.state.hasError) {
       return (
         <div className="bg-background text-foreground min-h-screen p-8 font-sans">
+          {/* Fix: With props correctly typed, this.props can be safely accessed, resolving error on line 31. */}
           <h1 className="text-3xl font-bold text-destructive border-b pb-4 mb-4">{this.props.t('error.boundaryTitle')}</h1>
+          {/* Fix: With props correctly typed, this.props can be safely accessed, resolving error on line 32. */}
           <p className="text-lg text-muted-foreground">{this.props.t('error.boundaryMessage')}</p>
           <details className="mt-6 bg-secondary p-4 rounded-lg">
+            {/* Fix: With props correctly typed, this.props can be safely accessed, resolving error on line 34. */}
             <summary className="cursor-pointer font-semibold">{this.props.t('error.boundaryDetails')}</summary>
             <pre className="whitespace-pre-wrap break-all mt-2 text-sm text-muted-foreground">
+              {/* Fix: With state correctly typed, this.state can be safely accessed, resolving error on line 36. */}
               {this.state.error?.toString()}
               <br />
+              {/* Fix: With state correctly typed, this.state can be safely accessed, resolving error on line 38. */}
               {this.state.error?.stack}
             </pre>
           </details>
@@ -46,6 +48,7 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
       );
     }
 
+    // Fix: With props correctly typed, this.props can be safely accessed, resolving error on line 45.
     return this.props.children; 
   }
 }
