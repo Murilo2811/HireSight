@@ -21,7 +21,7 @@ const App: React.FC = () => {
   const { t, language } = useTranslations();
   
   // App State
-  const [isAuthenticated, setIsAuthenticated] = useState(() => !!localStorage.getItem('hireright_auth'));
+  const [isAuthenticated, setIsAuthenticated] = useState(() => !!localStorage.getItem('righthire_auth'));
   const [currentView, setCurrentView] = useState<AppView>('landing');
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
     const savedTheme = localStorage.getItem('theme');
@@ -32,7 +32,7 @@ const App: React.FC = () => {
   // LLM & API Key State
   const [llmConfig, setLlmConfig] = useState<LlmConfig>(() => {
     try {
-        const storedConfig = localStorage.getItem('hireright_settings');
+        const storedConfig = localStorage.getItem('righthire_settings');
         if (storedConfig) {
             return JSON.parse(storedConfig);
         }
@@ -73,14 +73,14 @@ const App: React.FC = () => {
   }, [theme]);
   
   useEffect(() => {
-    localStorage.setItem('hireright_settings', JSON.stringify(llmConfig));
+    localStorage.setItem('righthire_settings', JSON.stringify(llmConfig));
   }, [llmConfig]);
 
   // Handlers
   const handleAuthSuccess = (remember: boolean) => {
     setIsAuthenticated(true);
     if (remember) {
-      localStorage.setItem('hireright_auth', 'true');
+      localStorage.setItem('righthire_auth', 'true');
     }
     setCurrentView('app');
     inputRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -88,7 +88,7 @@ const App: React.FC = () => {
   
   const handleLogout = () => {
     setIsAuthenticated(false);
-    localStorage.removeItem('hireright_auth');
+    localStorage.removeItem('righthire_auth');
     setCurrentView('landing');
   };
 
@@ -112,9 +112,17 @@ const App: React.FC = () => {
       toast.success(t(`toast.success.${analysisType}`));
       return result; // Return result for chaining
     } catch (e) {
-      const errorMessage = e instanceof Error ? e.message : 'error.unknown';
-      setError(t(errorMessage));
-      toast.error(t(errorMessage));
+      const originalMessage = e instanceof Error ? e.message : 'error.unknown';
+      let displayKey = originalMessage;
+
+      // Check for overload-related strings
+      if (originalMessage.includes('overloaded') || originalMessage.includes('503')) {
+          displayKey = 'error.modelOverloaded';
+      }
+      
+      const translatedError = t(displayKey);
+      setError(translatedError);
+      toast.error(translatedError);
     } finally {
       setIsLoading(false);
       setActiveAnalysis(null);

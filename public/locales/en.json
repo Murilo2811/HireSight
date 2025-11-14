@@ -1,5 +1,5 @@
 {
-  "appTitle": "HireRight",
+  "appTitle": "RightHire",
   "nav": {
     "home": "Home",
     "features": "Features",
@@ -15,7 +15,7 @@
     "signup": {
       "tab": "Sign Up",
       "title": "Create an Account",
-      "description": "Get started with HireRight in seconds.",
+      "description": "Get started with RightHire in seconds.",
       "button": "Create Account"
     },
     "emailLabel": "Email",
@@ -28,7 +28,7 @@
       "line1": "Find the Perfect Fit,",
       "line2": "Faster."
     },
-    "subtitle": "HireRight leverages cutting-edge AI to deeply analyze resumes and job descriptions, providing you with unparalleled insights to make smarter, data-driven hiring decisions.",
+    "subtitle": "RightHire leverages cutting-edge AI to deeply analyze resumes and job descriptions, providing you with unparalleled insights to make smarter, data-driven hiring decisions.",
     "cta": {
       "primary": "Get Started",
       "secondary": "How It Works"
@@ -40,7 +40,7 @@
     }
   },
   "features": {
-    "title": "Why Choose HireRight?",
+    "title": "Why Choose RightHire?",
     "subtitle": "Our platform is designed to streamline your hiring process from start to finish.",
     "advancedAI": {
       "title": "Advanced AI Analysis",
@@ -168,7 +168,7 @@
   },
   "consistencyInfo": {
     "title": "Interview Consistency Analysis",
-    "intro1": "This is one of the most powerful tools on the HireRight platform, designed for the final stage of the hiring process, after the candidate's interview.",
+    "intro1": "This is one of the most powerful tools on the RightHire platform, designed for the final stage of the hiring process, after the candidate's interview.",
     "whatIsItTitle": "What is the Interview Consistency Analysis?",
     "whatIsItP1": "In short, it is a deep analysis that the artificial intelligence performs to compare, verify, and evaluate information from three main sources:",
     "whatIsItSources": {
@@ -229,7 +229,8 @@
       "save": "Save",
       "cancel": "Cancel",
       "downloadResume": "Download Resume",
-      "downloadPdf": "Download PDF"
+      "downloadPdf": "Download PDF",
+      "clear": "Clear"
   },
   "settings": {
     "title": "Settings",
@@ -277,7 +278,8 @@
     "openaiKeyMissing": "OpenAI API Key is missing. Please add it in the settings.",
     "anthropicKeyMissing": "Anthropic API Key is missing. Please add it in the settings.",
     "groqKeyMissing": "Groq API Key is missing. Please add it in the settings.",
-    "serviceNotInitialized": "AI service is not initialized. Please check your API key settings."
+    "serviceNotInitialized": "AI service is not initialized. Please check your API key settings.",
+    "modelOverloaded": "The AI service is currently experiencing high traffic and is temporarily overloaded. Please wait a few moments and try again."
   },
   "toast": {
       "success": {

@@ -1,5 +1,5 @@
 {
-  "appTitle": "HireRight",
+  "appTitle": "RightHire",
   "nav": {
     "home": "Inicio",
     "features": "Características",
@@ -15,7 +15,7 @@
     "signup": {
       "tab": "Registrarse",
       "title": "Crear una Cuenta",
-      "description": "Empieza a usar HireRight en segundos.",
+      "description": "Empieza a usar RightHire en segundos.",
       "button": "Crear Cuenta"
     },
     "emailLabel": "Correo Electrónico",
@@ -28,7 +28,7 @@
       "line1": "Encuentra al Candidato Perfecto,",
       "line2": "Más Rápido."
     },
-    "subtitle": "HireRight utiliza IA de vanguardia para analizar en profundidad currículos y descripciones de trabajo, brindándote conocimientos inigualables para tomar decisiones de contratación más inteligentes y basadas en datos.",
+    "subtitle": "RightHire utiliza IA de vanguardia para analizar en profundidad currículos y descripciones de trabajo, brindándote conocimientos inigualables para tomar decisiones de contratación más inteligentes y basadas en datos.",
     "cta": {
       "primary": "Comenzar",
       "secondary": "Cómo Funciona"
@@ -40,7 +40,7 @@
     }
   },
   "features": {
-    "title": "¿Por Qué Elegir HireRight?",
+    "title": "¿Por Qué Elegir RightHire?",
     "subtitle": "Nuestra plataforma está diseñada para optimizar tu proceso de contratación de principio a fin.",
     "advancedAI": {
       "title": "Análisis Avanzado de IA",
@@ -168,7 +168,7 @@
   },
   "consistencyInfo": {
     "title": "Análisis de Coherencia de la Entrevista",
-    "intro1": "Esta es una de las herramientas más potentes de la plataforma HireRight, diseñada para la etapa final del proceso de contratación, después de la entrevista con el candidato.",
+    "intro1": "Esta es una de las herramientas más potentes de la plataforma RightHire, diseñada para la etapa final del proceso de contratación, después de la entrevista con el candidato.",
     "whatIsItTitle": "¿Qué es el Análisis de Coherencia de la Entrevista?",
     "whatIsItP1": "En resumen, es un análisis profundo que la inteligencia artificial realiza para comparar, verificar y evaluar información de tres fuentes principales:",
     "whatIsItSources": {
@@ -229,7 +229,8 @@
     "save": "Guardar",
     "cancel": "Cancelar",
     "downloadResume": "Descargar Currículum",
-    "downloadPdf": "Descargar PDF"
+    "downloadPdf": "Descargar PDF",
+    "clear": "Limpiar"
   },
   "settings": {
     "title": "Configuración",
@@ -277,7 +278,8 @@
     "openaiKeyMissing": "Falta la clave de API de OpenAI. Por favor, agrégala en la configuración.",
     "anthropicKeyMissing": "Falta la clave de API de Anthropic. Por favor, agrégala en la configuración.",
     "groqKeyMissing": "Falta la clave de API de Groq. Por favor, agrégala en la configuración.",
-    "serviceNotInitialized": "El servicio de IA no está inicializado. Por favor, comprueba la configuración de tu clave de API."
+    "serviceNotInitialized": "El servicio de IA no está inicializado. Por favor, comprueba la configuración de tu clave de API.",
+    "modelOverloaded": "El servicio de IA está experimentando un alto tráfico y está temporalmente sobrecargado. Por favor, espere unos momentos y vuelva a intentarlo."
   },
   "toast": {
       "success": {
